@@ -1,0 +1,10 @@
+{
+  "name": "openslot",
+  "version": "0.1.0",
+  "description": "Lightweight web app for booking and managing professor office hour appointments",
+  "private": true,
+  "scripts": {
+    "start:server": "cd server && node index.js",
+    "start": "npm run start:server"
+  }
+}

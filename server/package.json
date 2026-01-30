@@ -1,0 +1,10 @@
+{
+  "name": "openslot-server",
+  "version": "0.1.0",
+  "description": "OpenSlot API for office hour booking",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  }
+}
