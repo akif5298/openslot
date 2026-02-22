@@ -21,6 +21,7 @@ Team:
 | Back-end runnable setup + route/controller structure | `server/src/app.js`, `server/src/routes/*.js`, `server/src/controllers/*.js` |
 | Kanban tracking evidence | `docs/milestone-02/kanban-evidence.md` |
 | Activity blog/wiki updates (2+ entries) | `docs/milestone-02/activity-blog.md` |
+| Rubric self-audit checklist | `docs/milestone-02/rubric-checklist.md` |
 | Updated run instructions + contribution summary | This README |
 
 ## Front-End Workflow Implemented
@@ -68,6 +69,16 @@ Demo logins:
 - `student2@demo.com`
 - `prof@demo.com`
 - `prof2@demo.com`
+
+### 3) Run Milestone 02 verification (optional but recommended)
+```bash
+./scripts/verify-milestone-02.sh
+```
+This script validates:
+- required Milestone 02 artifacts exist
+- JS syntax across client/server
+- SQL schema execution + constraints in sqlite
+- API smoke flows (auth/courses/slots/booking/reschedule/cancel/schedule)
 
 ## Database Design Notes
 
