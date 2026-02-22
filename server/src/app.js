@@ -11,7 +11,7 @@ app.use(express.json());
 app.use("/api", routes);
 
 app.get("/", (req, res) => {
-  res.json({ ok: true, service: "OpenSlot API", milestone: 1 });
+  res.json({ ok: true, service: "OpenSlot API", milestone: 2 });
 });
 
 app.listen(PORT, () => {
