@@ -1,10 +1,14 @@
 {
   "name": "openslot-server",
-  "version": "0.1.0",
-  "description": "OpenSlot API for office hour booking",
-  "main": "index.js",
+  "version": "1.0.0",
+  "main": "src/app.js",
+  "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js"
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
   }
 }

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenSlot | Appointment Details</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="shell">
+      <header class="topbar">
+        <div>
+          <h1 id="heading">Appointment Details</h1>
+          <p class="subtle">Review your meeting info before the session starts.</p>
+        </div>
+        <nav class="nav-row">
+          <a class="btn btn-link" href="my-bookings.html">Back to Bookings</a>
+          <button class="btn-secondary" data-logout>Logout</button>
+        </nav>
+      </header>
+
+      <section class="card">
+        <div id="details"></div>
+        <p id="message" class="message message-info"></p>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="js/appointment-details.js"></script>
+</body>
+</html>

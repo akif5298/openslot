@@ -1,93 +1,89 @@
 # OpenSlot
 
-A centralized scheduling platform for academic office hours. Professors publish available slots; students browse, book, and manage appointments.
+OpenSlot is a role-based office-hours scheduling system for academic use.
+- Professors create availability slots (draft/post/cancel, public/private).
+- Students browse open slots, book appointments, and manage bookings.
 
-**CP476: Internet Computing – Winter 2026** · Dr. Mustafa Daraghmeh  
-Benjamin Okojie, Dharmik Patel, Akif Rahman
+Course: **CP476 Internet Computing (Winter 2026)**
 
----
+Team:
+- Benjamin Okojie
+- Dharmik Patel
+- Akif Rahman
 
-## Project structure
+## Milestone 02 Deliverables Mapping
 
-```
-openslot/
-├── client/           # Frontend
-│   ├── assets/
-│   ├── css/
-│   ├── js/
-│   └── index.html
-├── server/           # Backend
-│   ├── lib/
-│   ├── routes/
-│   └── index.js
-├── package.json
-└── README.md
-```
+| Required Deliverable | Implemented In Repo |
+|---|---|
+| Working front-end + core screens + primary workflow | `client/*.html`, `client/js/*.js`, `client/css/styles.css` |
+| Database package PDF (diagram + SQL) | `docs/milestone-02/database-design-package.pdf` |
+| Database design source files | `docs/milestone-02/database-design.md`, `docs/milestone-02/database-design-package.txt`, `db/schema.sql` |
+| Back-end runnable setup + route/controller structure | `server/src/app.js`, `server/src/routes/*.js`, `server/src/controllers/*.js` |
+| Kanban tracking evidence | `docs/milestone-02/kanban-evidence.md` |
+| Activity blog/wiki updates (2+ entries) | `docs/milestone-02/activity-blog.md` |
+| Updated run instructions + contribution summary | This README |
 
----
+## Front-End Workflow Implemented
 
-## Setup
+Student flow:
+1. Login (`client/login.html`)
+2. Browse/filter available slots (`client/student-dashboard.html`)
+3. Book slot
+4. View bookings (`client/my-bookings.html`)
+5. View details (`client/appointment-details.html`)
+6. Cancel/reschedule before start time
 
+Professor flow:
+1. Login (`client/login.html`)
+2. Manage slots (`client/professor-dashboard.html`)
+3. Create/edit slots (`client/slot-create.html`)
+4. Publish/cancel slots
+5. View day/week schedule (`client/professor-schedule.html`)
+
+## Back-End Setup
+
+API root: `http://localhost:3001/api`
+
+Implemented route groups:
+- `POST /api/auth/login`
+- `GET /api/courses`
+- `GET/POST/PATCH /api/slots...`
+- `POST/GET/PATCH /api/appointments...`
+- `GET /api/schedule/professor/:professorId`
+
+## Run Locally
+
+### 1) Start the server
 ```bash
-# Install root dependencies
+cd server
 npm install
-
-# Install server dependencies (if any)
-cd server && npm install && cd ..
+npm run start
 ```
 
----
-
-## Running the app
-
-```bash
-# Start the server (from project root)
-npm start
-
-# Or start the server directly
-npm run start:server
-```
-
-The client is static: open `client/index.html` in a browser, or serve the `client/` folder (e.g. with a static server or through the backend) when integrated.
-
-
-# OpenSlot (Milestone 2)
-
-OpenSlot is a lightweight office-hours booking prototype with two roles:
-- Students can browse and book posted office hour slots.
-- Professors can create slots and publish/cancel them.
-- Students can view session details, cancel, and reschedule (before session start).
-- Professors can view schedule (day/week) and clearly see booked vs open.
-
-## Tech
-- Front-end: HTML/CSS/Vanilla JS
-- Back-end: Node.js + Express (Milestone 2 demo data in memory)
-- DB Design: SQL schema provided in /db/schema.sql (for Milestone 3 integration)
-
-## Run
-### Server
-- cd server
-- npm install
-- npm run dev
-- Server: http://localhost:3001
-
-### Client
-Open client/login.html in a browser.
+### 2) Open the front-end
+Open `client/login.html` in your browser.
 
 Demo logins:
-- student@demo.com
-- prof@demo.com
+- `student@demo.com`
+- `student2@demo.com`
+- `prof@demo.com`
+- `prof2@demo.com`
 
-## API (Milestone 2)
-- POST /api/auth/login { email }
-- GET /api/courses
-- GET /api/slots?courseId=&date=&professorId=&includeBooked=
-- GET /api/slots/:id
-- POST /api/slots
-- PATCH /api/slots/:id/status
-- POST /api/appointments
-- GET /api/appointments/mine/:studentId
-- GET /api/appointments/:appointmentId
-- PATCH /api/appointments/:appointmentId/cancel
-- PATCH /api/appointments/:appointmentId/reschedule { new_slot_id }
-- GET /api/schedule/professor/:professorId?view=day|week&date=YYYY-MM-DD
+## Database Design Notes
+
+- SQL schema is in `db/schema.sql`.
+- Includes PK/FK constraints, CHECK constraints, UNIQUE constraints, and indexes.
+- Relational model covers users, courses, office-hour slots, and appointments.
+
+## Team Contributions (Milestone 02)
+
+- **Benjamin Okojie**: student-facing workflow UI, schedule rendering support.
+- **Dharmik Patel**: backend route/controller implementation, database schema design, integration testing.
+- **Akif Rahman**: professor dashboard/slot forms, appointment detail UX, documentation support.
+
+## Submission Notes
+
+For Milestone 02 Dropbox submission, include:
+- Repository link/commit
+- `docs/milestone-02/database-design-package.pdf`
+- Any required screenshots of GitHub Projects board/wiki entries if requested by instructor.

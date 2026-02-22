@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenSlot | Professor Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Professor Dashboard</h1>
+          <p class="subtle" id="welcome"></p>
+        </div>
+        <nav class="nav-row">
+          <a class="btn btn-link" href="slot-create.html">Create Slot</a>
+          <a class="btn btn-link" href="professor-schedule.html">Schedule View</a>
+          <button class="btn-secondary" data-logout>Logout</button>
+        </nav>
+      </header>
+
+      <section class="card">
+        <div class="filter-row" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+          <div>
+            <label for="status-filter">Status</label>
+            <select id="status-filter">
+              <option value="all">All</option>
+              <option value="draft">Draft</option>
+              <option value="posted">Posted</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button class="btn-primary" id="refresh-button" type="button">Refresh</button>
+          </div>
+        </div>
+        <p id="message" class="message message-info"></p>
+      </section>
+
+      <section id="slots" class="grid" style="margin-top: 14px;"></section>
+    </section>
+  </main>
+  <script type="module" src="js/professor.js"></script>
+</body>
+</html>

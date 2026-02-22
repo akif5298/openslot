@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenSlot | Professor Schedule</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Professor Schedule</h1>
+          <p class="subtle">Daily/weekly view with open and booked slots.</p>
+        </div>
+        <nav class="nav-row">
+          <a class="btn btn-link" href="professor-dashboard.html">Back to Dashboard</a>
+          <button class="btn-secondary" data-logout>Logout</button>
+        </nav>
+      </header>
+
+      <section class="card">
+        <div class="filter-row" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+          <div>
+            <label for="view">View</label>
+            <select id="view">
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+            </select>
+          </div>
+          <div>
+            <label for="date">Date</label>
+            <input id="date" type="date" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="refresh" type="button" class="btn-primary">Refresh</button>
+          </div>
+        </div>
+        <p id="message" class="message message-info"></p>
+        <div id="summary" class="info-grid"></div>
+      </section>
+
+      <section id="schedule" class="grid" style="margin-top: 14px;"></section>
+    </section>
+  </main>
+  <script type="module" src="js/professor-schedule.js"></script>
+</body>
+</html>

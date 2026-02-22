@@ -3,22 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenSlot – Office Hour Booking</title>
-  <link rel="stylesheet" href="css/main.css" />
+  <title>OpenSlot | Login</title>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div id="app">
-    <header class="app-header">
+  <main class="center-wrap">
+    <section class="card auth-card">
       <h1>OpenSlot</h1>
-      <p>Book and manage professor office hour appointments</p>
-    </header>
-    <main class="app-main">
-      <!-- App content loaded here -->
-    </main>
-    <footer class="app-footer">
-      <small>OpenSlot &copy; 2025</small>
-    </footer>
-  </div>
-  <script type="module" src="js/main.js"></script>
+      <p class="subtle">Office-hour booking prototype (Milestone 1)</p>
+      <hr />
+      <form id="login-form" novalidate>
+        <label for="email">Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="student@demo.com or prof@demo.com"
+          required
+          list="demo-users"
+        />
+        <datalist id="demo-users">
+          <option value="student@demo.com"></option>
+          <option value="student2@demo.com"></option>
+          <option value="prof@demo.com"></option>
+          <option value="prof2@demo.com"></option>
+        </datalist>
+        <div class="inline-actions" style="margin-top: 12px;">
+          <button class="btn-primary" type="submit">Sign In</button>
+        </div>
+        <p id="message" class="message message-info"></p>
+      </form>
+    </section>
+  </main>
+  <script type="module" src="js/auth.js"></script>
 </body>
 </html>

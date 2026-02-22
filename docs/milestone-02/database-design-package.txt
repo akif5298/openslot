@@ -1,3 +1,47 @@
+OpenSlot Milestone 02 - Database Design Package
+
+A) Relational / ER Diagram (text form)
+
+[USERS] (user_id PK)
+  - name
+  - email UNIQUE
+  - role CHECK(student|professor)
+  - created_at
+
+[COURSES] (course_id PK)
+  - course_code
+  - course_name
+  - term
+
+[OFFICE_HOUR_SLOTS] (slot_id PK)
+  - professor_id FK -> USERS.user_id
+  - course_id FK -> COURSES.course_id
+  - start_time
+  - end_time
+  - mode CHECK(in_person|virtual)
+  - location_or_link
+  - visibility CHECK(public|private)
+  - status CHECK(draft|posted|cancelled)
+  - booked_by FK -> USERS.user_id (nullable)
+  - notes
+  - created_at
+  - updated_at
+
+[APPOINTMENTS] (appointment_id PK)
+  - slot_id FK -> OFFICE_HOUR_SLOTS.slot_id UNIQUE
+  - student_id FK -> USERS.user_id
+  - status CHECK(booked|cancelled|completed)
+  - notes
+  - created_at
+
+Cardinality summary:
+- USERS (professors) 1 -> many OFFICE_HOUR_SLOTS
+- COURSES 1 -> many OFFICE_HOUR_SLOTS
+- USERS (students) 1 -> many APPOINTMENTS
+- OFFICE_HOUR_SLOTS 1 -> zero/one APPOINTMENTS
+
+B) SQL CREATE TABLE Statements
+
 -- OpenSlot relational schema (Milestone 02)
 
 CREATE TABLE IF NOT EXISTS users (
@@ -55,3 +99,8 @@ ON office_hour_slots (course_id, start_time);
 
 CREATE INDEX IF NOT EXISTS idx_appointments_student
 ON appointments (student_id);
+
+C) Normalization notes
+- 1NF: atomic attributes only.
+- 2NF: every non-key attribute depends on its full key.
+- 3NF: no transitive dependency among non-key attributes.

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenSlot | My Bookings</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="shell">
+      <header class="topbar">
+        <div>
+          <h1>My Bookings</h1>
+          <p class="subtle" id="welcome"></p>
+        </div>
+        <nav class="nav-row">
+          <a class="btn btn-link" href="student-dashboard.html">Browse Slots</a>
+          <button class="btn-secondary" data-logout>Logout</button>
+        </nav>
+      </header>
+
+      <section class="card">
+        <p class="subtle">View upcoming/past appointments and cancel or reschedule before start time.</p>
+        <p id="message" class="message message-info"></p>
+      </section>
+
+      <section id="bookings" class="grid" style="margin-top: 14px;"></section>
+    </section>
+  </main>
+  <script type="module" src="js/bookings.js"></script>
+</body>
+</html>
