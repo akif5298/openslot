@@ -29,3 +29,8 @@ export function login(req, res) {
     user: sanitizeUser(user)
   });
 }
+
+export function logout(req, res) {
+  // Demo environment uses client-side session storage only.
+  return res.json({ ok: true, message: "Logged out" });
+}
