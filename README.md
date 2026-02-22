@@ -66,10 +66,10 @@ OpenSlot is a lightweight office-hours booking prototype with two roles:
 
 ## Run
 ### Server
-cd server
-npm install
-npm run dev
-Server: http://localhost:3001
+- cd server
+- npm install
+- npm run dev
+- Server: http://localhost:3001
 
 ### Client
 Open client/login.html in a browser.
