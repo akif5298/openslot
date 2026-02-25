@@ -47,3 +47,14 @@ export let DEMO_APPOINTMENTS = [
     created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString()
   }
 ];
+
+let nextAppointmentValue =
+  DEMO_APPOINTMENTS.length > 0
+    ? Math.max(...DEMO_APPOINTMENTS.map(item => Number(item.appointment_id) || 0)) + 1
+    : 1;
+
+export function nextAppointmentId() {
+  const value = nextAppointmentValue;
+  nextAppointmentValue += 1;
+  return value;
+}

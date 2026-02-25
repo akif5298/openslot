@@ -1,79 +1,110 @@
-import { apiGet, apiPost, fmtDT } from "./api.js";
-import { requireAuth, logout } from "./auth.js";
+import { apiGet, apiPost, fmtDT, setMessage } from "./api.js";
+import { logout, requireAuth } from "./auth.js";
 
 const session = requireAuth();
-if (session.user.role !== "student") window.location.href = "professor-dashboard.html";
-
-document.getElementById("who").textContent = `${session.user.name} (Student)`;
-document.getElementById("logoutBtn").addEventListener("click", logout);
-
-async function loadCourses() {
-  const data = await apiGet("/courses");
-  const sel = document.getElementById("courseSel");
-  sel.innerHTML = `<option value="">All courses</option>`;
-  data.courses.forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c.course_id;
-    opt.textContent = `${c.course_code} — ${c.course_name} (${c.term})`;
-    sel.appendChild(opt);
-  });
+if (!session) {
+  // Redirect is handled in requireAuth.
+  throw new Error("Missing auth session");
 }
 
+if (session.user.role !== "student") {
+  window.location.href = "professor-dashboard.html";
+}
+
+const welcomeNode = document.getElementById("welcome");
+const courseSelect = document.getElementById("course-filter");
+const dateInput = document.getElementById("date-filter");
+const refreshButton = document.getElementById("refresh-button");
+const slotsNode = document.getElementById("slots");
+const messageNode = document.getElementById("message");
+
+document.querySelector("[data-logout]")?.addEventListener("click", event => {
+  event.preventDefault();
+  logout();
+});
+
+welcomeNode.textContent = `${session.user.name} (${session.user.email})`;
+
 function renderSlots(slots) {
-  const tbody = document.getElementById("slotsBody");
-  tbody.innerHTML = "";
-  if (!slots.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><small>No available slots match your filters.</small></td></tr>`;
+  if (!Array.isArray(slots) || slots.length === 0) {
+    slotsNode.innerHTML = '<div class="card"><p class="subtle">No available slots for the selected filters.</p></div>';
     return;
   }
 
-  slots.forEach(s => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${s.course_code}</td>
-      <td>${s.professor_name}</td>
-      <td>${fmtDT(s.start_time)}</td>
-      <td>${fmtDT(s.end_time)}</td>
-      <td><span class="badge ${s.status}">${s.status}</span> <span class="badge">${s.mode}</span></td>
-      <td><button class="btn ok" data-id="${s.slot_id}">Book</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
+  slotsNode.innerHTML = slots
+    .map(
+      slot => `
+      <article class="slot-card">
+        <h3 class="slot-title">${slot.course_code} · ${slot.course_name}</h3>
+        <p class="meta"><strong>Professor:</strong> ${slot.professor_name}</p>
+        <p class="meta"><strong>Time:</strong> ${fmtDT(slot.start_time)} → ${fmtDT(slot.end_time)}</p>
+        <p class="meta"><strong>Mode:</strong> ${slot.mode}</p>
+        <p class="meta"><strong>Location/Link:</strong> ${slot.location_or_link}</p>
+        <div class="inline-actions">
+          <button class="btn-primary" data-slot-id="${slot.slot_id}">Book</button>
+        </div>
+      </article>
+    `
+    )
+    .join("");
 
-  tbody.querySelectorAll("button[data-id]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const slotId = Number(btn.dataset.id);
-      const notes = prompt("Optional notes for professor (or leave blank):") ?? "";
-      const res = await apiPost("/appointments", { slot_id: slotId, student_id: session.user.user_id, notes });
-      const box = document.getElementById("notice");
+  slotsNode.querySelectorAll("button[data-slot-id]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const slotId = Number(button.getAttribute("data-slot-id"));
+      const notes = window.prompt("Optional notes for professor:", "") ?? "";
 
-      if (!res.ok) {
-        box.className = "notice error";
-        box.textContent = res.message || "Booking failed.";
-      } else {
-        box.className = "notice success";
-        box.textContent = "Booked! You can view it in My Bookings.";
-        await refresh();
+      setMessage(messageNode, "Booking slot...", "info");
+      const result = await apiPost("/appointments", {
+        slot_id: slotId,
+        student_id: session.user.user_id,
+        notes
+      });
+
+      if (!result.ok) {
+        setMessage(messageNode, result.message || "Booking failed.", "error");
+        return;
       }
+
+      setMessage(messageNode, "Booking successful. Check My Bookings.", "success");
+      await refreshSlots();
     });
   });
 }
 
-async function refresh() {
-  const courseId = document.getElementById("courseSel").value;
-  const date = document.getElementById("dateSel").value; // YYYY-MM-DD
-  const q = new URLSearchParams();
-  if (courseId) q.set("courseId", courseId);
-  if (date) q.set("date", date);
+async function loadCourses() {
+  const result = await apiGet("/courses");
+  if (!result.ok) {
+    setMessage(messageNode, result.message || "Failed to load courses.", "error");
+    return;
+  }
 
-  const data = await apiGet(`/slots?${q.toString()}`);
-  renderSlots(data.slots || []);
+  courseSelect.innerHTML = '<option value="">All courses</option>';
+  for (const course of result.courses) {
+    const option = document.createElement("option");
+    option.value = String(course.course_id);
+    option.textContent = `${course.course_code} — ${course.course_name}`;
+    courseSelect.appendChild(option);
+  }
 }
 
-document.getElementById("filtersBtn").addEventListener("click", refresh);
-document.getElementById("bookingsBtn").addEventListener("click", () => {
-  window.location.href = "my-bookings.html";
-});
+async function refreshSlots() {
+  const query = new URLSearchParams();
+  if (courseSelect.value) query.set("courseId", courseSelect.value);
+  if (dateInput.value) query.set("date", dateInput.value);
+
+  setMessage(messageNode, "Loading slots...", "info");
+  const result = await apiGet(`/slots?${query.toString()}`);
+
+  if (!result.ok) {
+    setMessage(messageNode, result.message || "Failed to load slots.", "error");
+    return;
+  }
+
+  setMessage(messageNode, "", "info");
+  renderSlots(result.slots || []);
+}
+
+refreshButton?.addEventListener("click", refreshSlots);
 
 await loadCourses();
-await refresh();
+await refreshSlots();

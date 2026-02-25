@@ -1,69 +1,96 @@
-import { apiGet, apiPatch } from "./api.js";
-import { requireAuth, logout } from "./auth.js";
-import { fmtDT } from "./api.js";
+import { apiGet, apiPatch, fmtDT, setMessage } from "./api.js";
+import { logout, requireAuth } from "./auth.js";
 
 const session = requireAuth();
-if (session.user.role !== "professor") window.location.href = "student-dashboard.html";
+if (!session) {
+  throw new Error("Missing auth session");
+}
 
-document.getElementById("who").textContent = `${session.user.name} (Professor)`;
-document.getElementById("logoutBtn").addEventListener("click", logout);
+if (session.user.role !== "professor") {
+  window.location.href = "student-dashboard.html";
+}
 
-document.getElementById("createBtn").addEventListener("click", () => {
-  window.location.href = "slot-create.html";
+const welcomeNode = document.getElementById("welcome");
+const statusSelect = document.getElementById("status-filter");
+const refreshButton = document.getElementById("refresh-button");
+const slotsNode = document.getElementById("slots");
+const messageNode = document.getElementById("message");
+
+document.querySelector("[data-logout]")?.addEventListener("click", event => {
+  event.preventDefault();
+  logout();
 });
 
-async function refresh() {
-  const q = new URLSearchParams();
-  q.set("professorId", session.user.user_id);
-  q.set("includeBooked", "true");
+welcomeNode.textContent = `${session.user.name} (${session.user.email})`;
 
-  const data = await apiGet(`/slots?${q.toString()}`);
-  const tbody = document.getElementById("slotsBody");
-  tbody.innerHTML = "";
-
-  if (!data.slots?.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><small>No slots yet. Create one!</small></td></tr>`;
+function renderSlots(slots) {
+  if (!Array.isArray(slots) || slots.length === 0) {
+    slotsNode.innerHTML = '<div class="card"><p class="subtle">No slots found.</p></div>';
     return;
   }
 
-  data.slots.forEach(s => {
-    const bookedText = s.booked_by ? `Booked (student #${s.booked_by})` : "Open";
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${s.course_code}</td>
-      <td>${fmtDT(s.start_time)}</td>
-      <td>${fmtDT(s.end_time)}</td>
-      <td><span class="badge">${s.mode}</span></td>
-      <td><span class="badge ${s.status}">${s.status}</span></td>
-      <td><small>${bookedText}</small></td>
-      <td class="row">
-        <button class="btn primary" data-action="post" data-id="${s.slot_id}">Post</button>
-        <button class="btn" data-action="draft" data-id="${s.slot_id}">Draft</button>
-        <button class="btn danger" data-action="cancel" data-id="${s.slot_id}">Cancel</button>
-      </td>
+  slotsNode.innerHTML = slots
+    .map(slot => {
+      const bookedText = slot.booked_by ? `Booked by student #${slot.booked_by}` : "Open";
+      return `
+      <article class="slot-card">
+        <h3 class="slot-title">${slot.course_code} · ${slot.course_name}</h3>
+        <p class="meta"><strong>Time:</strong> ${fmtDT(slot.start_time)} → ${fmtDT(slot.end_time)}</p>
+        <p class="meta"><strong>Mode:</strong> ${slot.mode}</p>
+        <p class="meta"><strong>Status:</strong> <span class="badge ${slot.status}">${slot.status}</span></p>
+        <p class="meta"><strong>Booking:</strong> ${bookedText}</p>
+        <div class="inline-actions">
+          <button class="btn-secondary" data-action="post" data-slot-id="${slot.slot_id}">Post</button>
+          <button class="btn-secondary" data-action="draft" data-slot-id="${slot.slot_id}">Draft</button>
+          <button class="btn-danger" data-action="cancelled" data-slot-id="${slot.slot_id}">Cancel</button>
+        </div>
+      </article>
     `;
-    tbody.appendChild(tr);
-  });
+    })
+    .join("");
 
-  tbody.querySelectorAll("button[data-id]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const id = Number(btn.dataset.id);
-      const action = btn.dataset.action;
-      const status = action === "post" ? "posted" : action === "draft" ? "draft" : "cancelled";
+  slotsNode.querySelectorAll("button[data-slot-id]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const slotId = Number(button.getAttribute("data-slot-id"));
+      const nextStatus = button.getAttribute("data-action");
 
-      const res = await apiPatch(`/slots/${id}/status`, { status });
-      const box = document.getElementById("notice");
-      if (!res.ok) {
-        box.className = "notice error";
-        box.textContent = res.message || "Update failed.";
-      } else {
-        box.className = "notice success";
-        box.textContent = `Updated slot #${id} → ${status}`;
-        await refresh();
+      setMessage(messageNode, `Updating slot #${slotId}...`, "info");
+      const result = await apiPatch(`/slots/${slotId}/status`, { status: nextStatus });
+
+      if (!result.ok) {
+        setMessage(messageNode, result.message || "Failed to update slot.", "error");
+        return;
       }
+
+      setMessage(messageNode, `Slot #${slotId} updated to ${nextStatus}.`, "success");
+      await refreshSlots();
     });
   });
 }
 
-await refresh();
+async function refreshSlots() {
+  const query = new URLSearchParams();
+  query.set("professorId", String(session.user.user_id));
+  query.set("includeBooked", "true");
+
+  setMessage(messageNode, "Loading slots...", "info");
+  const result = await apiGet(`/slots?${query.toString()}`);
+
+  if (!result.ok) {
+    setMessage(messageNode, result.message || "Failed to load slots.", "error");
+    return;
+  }
+
+  let slots = result.slots || [];
+  if (statusSelect.value && statusSelect.value !== "all") {
+    slots = slots.filter(slot => slot.status === statusSelect.value);
+  }
+
+  setMessage(messageNode, "", "info");
+  renderSlots(slots);
+}
+
+refreshButton?.addEventListener("click", refreshSlots);
+statusSelect?.addEventListener("change", refreshSlots);
+
+await refreshSlots();

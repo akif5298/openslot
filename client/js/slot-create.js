@@ -1,62 +1,72 @@
-import { apiGet, apiPost } from "./api.js";
-import { requireAuth, logout } from "./auth.js";
+import { apiGet, apiPost, setMessage } from "./api.js";
+import { logout, requireAuth } from "./auth.js";
 
 const session = requireAuth();
-if (session.user.role !== "professor") window.location.href = "student-dashboard.html";
+if (!session) {
+  throw new Error("Missing auth session");
+}
 
-document.getElementById("who").textContent = `${session.user.name} (Professor)`;
-document.getElementById("logoutBtn").addEventListener("click", logout);
+if (session.user.role !== "professor") {
+  window.location.href = "student-dashboard.html";
+}
 
-document.getElementById("backBtn").addEventListener("click", () => {
-  window.location.href = "professor-dashboard.html";
+const form = document.getElementById("slot-form");
+const courseSelect = document.getElementById("course_id");
+const dateInput = document.getElementById("date");
+const startInput = document.getElementById("start_time");
+const endInput = document.getElementById("end_time");
+const modeInput = document.getElementById("mode");
+const locationInput = document.getElementById("location_or_link");
+const visibilityInput = document.getElementById("visibility");
+const statusInput = document.getElementById("status");
+const messageNode = document.getElementById("message");
+
+document.querySelector("[data-logout]")?.addEventListener("click", event => {
+  event.preventDefault();
+  logout();
 });
 
 async function loadCourses() {
-  const data = await apiGet("/courses");
-  const sel = document.getElementById("courseSel");
-  sel.innerHTML = "";
-  data.courses.forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c.course_id;
-    opt.textContent = `${c.course_code} — ${c.course_name} (${c.term})`;
-    sel.appendChild(opt);
-  });
-}
-
-document.getElementById("createForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const course_id = Number(document.getElementById("courseSel").value);
-  const start_time = document.getElementById("startDT").value;
-  const end_time = document.getElementById("endDT").value;
-  const mode = document.getElementById("modeSel").value;
-  const location_or_link = document.getElementById("loc").value.trim();
-  const visibility = document.getElementById("visSel").value;
-  const status = document.getElementById("statusSel").value;
-
-  const box = document.getElementById("notice");
-  box.className = "notice";
-  box.textContent = "Creating...";
-
-  const res = await apiPost("/slots", {
-    professor_id: session.user.user_id,
-    course_id,
-    start_time,
-    end_time,
-    mode,
-    location_or_link,
-    visibility,
-    status
-  });
-
-  if (!res.ok) {
-    box.className = "notice error";
-    box.textContent = res.message || "Create failed.";
+  const result = await apiGet("/courses");
+  if (!result.ok) {
+    setMessage(messageNode, result.message || "Failed to load courses.", "error");
     return;
   }
 
-  box.className = "notice success";
-  box.textContent = `Created slot #${res.slot.slot_id} (${res.slot.status}).`;
+  courseSelect.innerHTML = "";
+  for (const course of result.courses) {
+    const option = document.createElement("option");
+    option.value = String(course.course_id);
+    option.textContent = `${course.course_code} — ${course.course_name}`;
+    courseSelect.appendChild(option);
+  }
+}
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const start_time = `${dateInput.value}T${startInput.value}`;
+  const end_time = `${dateInput.value}T${endInput.value}`;
+
+  setMessage(messageNode, "Creating slot...", "info");
+  const result = await apiPost("/slots", {
+    professor_id: session.user.user_id,
+    course_id: Number(courseSelect.value),
+    start_time,
+    end_time,
+    mode: modeInput.value,
+    location_or_link: locationInput.value,
+    visibility: visibilityInput.value,
+    status: statusInput.value
+  });
+
+  if (!result.ok) {
+    setMessage(messageNode, result.message || "Failed to create slot.", "error");
+    return;
+  }
+
+  setMessage(messageNode, `Slot #${result.slot.slot_id} created.`, "success");
+  form.reset();
 });
 
 await loadCourses();

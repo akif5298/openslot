@@ -1,37 +1,46 @@
-import { apiGet, fmtDT } from "./api.js";
-import { requireAuth, logout } from "./auth.js";
+import { apiGet, fmtDT, setMessage } from "./api.js";
+import { logout, requireAuth } from "./auth.js";
 
 const session = requireAuth();
-document.getElementById("who").textContent = `${session.user.name} (${session.user.role})`;
-document.getElementById("logoutBtn").addEventListener("click", logout);
-document.getElementById("backBtn").addEventListener("click", () => history.back());
+if (!session) {
+  throw new Error("Missing auth session");
+}
+
+const headingNode = document.getElementById("heading");
+const detailsNode = document.getElementById("details");
+const messageNode = document.getElementById("message");
+
+document.querySelector("[data-logout]")?.addEventListener("click", event => {
+  event.preventDefault();
+  logout();
+});
 
 const params = new URLSearchParams(window.location.search);
-const appointmentId = params.get("id");
-
-const notice = document.getElementById("notice");
-const details = document.getElementById("details");
+const appointmentId = params.get("id") || params.get("appointmentId");
 
 if (!appointmentId) {
-  notice.className = "notice error";
-  notice.textContent = "Missing appointment id.";
+  setMessage(messageNode, "Missing appointment id in URL.", "error");
 } else {
-  const data = await apiGet(`/appointments/${appointmentId}`);
-  if (!data.ok) {
-    notice.className = "notice error";
-    notice.textContent = data.message || "Failed to load details.";
-  } else {
-    const a = data.appointment;
-    const s = data.slot;
+  setMessage(messageNode, "Loading appointment details...", "info");
+  const result = await apiGet(`/appointments/${appointmentId}`);
 
-    details.innerHTML = `
-      <p><b>Status:</b> <span class="badge ${a.status}">${a.status}</span></p>
-      <p><b>Course:</b> ${s.course_code} — ${s.course_name}</p>
-      <p><b>Professor:</b> ${s.professor_name}</p>
-      <p><b>Date/Time:</b> ${fmtDT(s.start_time)} → ${fmtDT(s.end_time)}</p>
-      <p><b>Mode:</b> ${s.mode}</p>
-      <p><b>Location/Link:</b> ${s.location_or_link}</p>
-      <p><b>Notes:</b><br/>${(a.notes || "").replaceAll("<","&lt;")}</p>
+  if (!result.ok) {
+    setMessage(messageNode, result.message || "Failed to load appointment.", "error");
+  } else {
+    setMessage(messageNode, "", "info");
+
+    const appointment = result.appointment;
+    const slot = result.slot;
+
+    headingNode.textContent = `Appointment #${appointment.appointment_id}`;
+    detailsNode.innerHTML = `
+      <p><strong>Status:</strong> <span class="badge ${appointment.status}">${appointment.status}</span></p>
+      <p><strong>Course:</strong> ${slot.course_code} — ${slot.course_name}</p>
+      <p><strong>Professor:</strong> ${slot.professor_name}</p>
+      <p><strong>Time:</strong> ${fmtDT(slot.start_time)} → ${fmtDT(slot.end_time)}</p>
+      <p><strong>Mode:</strong> ${slot.mode}</p>
+      <p><strong>Location/Link:</strong> ${slot.location_or_link}</p>
+      <p><strong>Notes:</strong><br/>${(appointment.notes || "").replaceAll("<", "&lt;")}</p>
     `;
   }
 }
