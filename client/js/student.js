@@ -1,143 +1,79 @@
-import {
-  apiRequest,
-  attachLogoutButtons,
-  escapeHtml,
-  requireSession,
-  setMessage,
-  toDateInputValue,
-  toDisplayDateTime
-} from "./api.js";
+import { apiGet, apiPost, fmtDT } from "./api.js";
+import { requireAuth, logout } from "./auth.js";
 
-const session = requireSession("student");
+const session = requireAuth();
+if (session.user.role !== "student") window.location.href = "professor-dashboard.html";
 
-const welcomeNode = document.getElementById("welcome");
-const courseSelect = document.getElementById("course-filter");
-const dateInput = document.getElementById("date-filter");
-const refreshButton = document.getElementById("refresh-button");
-const slotsNode = document.getElementById("slots");
-const messageNode = document.getElementById("message");
+document.getElementById("who").textContent = `${session.user.name} (Student)`;
+document.getElementById("logoutBtn").addEventListener("click", logout);
 
-let slotsCache = [];
+async function loadCourses() {
+  const data = await apiGet("/courses");
+  const sel = document.getElementById("courseSel");
+  sel.innerHTML = `<option value="">All courses</option>`;
+  data.courses.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.course_id;
+    opt.textContent = `${c.course_code} — ${c.course_name} (${c.term})`;
+    sel.appendChild(opt);
+  });
+}
 
 function renderSlots(slots) {
+  const tbody = document.getElementById("slotsBody");
+  tbody.innerHTML = "";
   if (!slots.length) {
-    slotsNode.innerHTML = '<div class="card"><p class="subtle">No open slots match the selected filters.</p></div>';
+    tbody.innerHTML = `<tr><td colspan="6"><small>No available slots match your filters.</small></td></tr>`;
     return;
   }
 
-  slotsNode.innerHTML = slots
-    .map(
-      slot => `
-      <article class="slot-card" data-slot-id="${slot.slot_id}">
-        <h3 class="slot-title">${escapeHtml(slot.course_code)} · ${escapeHtml(slot.course_name)}</h3>
-        <p class="meta"><strong>Professor:</strong> ${escapeHtml(slot.professor_name)}</p>
-        <p class="meta"><strong>When:</strong> ${escapeHtml(toDisplayDateTime(slot.start_time))} - ${escapeHtml(
-        toDisplayDateTime(slot.end_time)
-      )}</p>
-        <p class="meta"><strong>Mode:</strong> ${escapeHtml(slot.mode)} | <strong>Location/Link:</strong> ${escapeHtml(
-        slot.location_or_link || "TBA"
-      )}</p>
-        <p class="meta"><strong>Status:</strong> <span class="badge badge-open">${escapeHtml(slot.status)}</span></p>
-        <div class="inline-actions">
-          <button class="btn-primary" data-book="${slot.slot_id}">Book Slot</button>
-        </div>
-      </article>
-    `
-    )
-    .join("");
-}
+  slots.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.course_code}</td>
+      <td>${s.professor_name}</td>
+      <td>${fmtDT(s.start_time)}</td>
+      <td>${fmtDT(s.end_time)}</td>
+      <td><span class="badge ${s.status}">${s.status}</span> <span class="badge">${s.mode}</span></td>
+      <td><button class="btn ok" data-id="${s.slot_id}">Book</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
 
-async function loadCourses() {
-  const payload = await apiRequest("/courses");
-  const options = ['<option value="">All courses</option>']
-    .concat(
-      payload.courses.map(
-        course =>
-          `<option value="${course.course_id}">${escapeHtml(course.course_code)} · ${escapeHtml(
-            course.course_name
-          )}</option>`
-      )
-    )
-    .join("");
+  tbody.querySelectorAll("button[data-id]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const slotId = Number(btn.dataset.id);
+      const notes = prompt("Optional notes for professor (or leave blank):") ?? "";
+      const res = await apiPost("/appointments", { slot_id: slotId, student_id: session.user.user_id, notes });
+      const box = document.getElementById("notice");
 
-  courseSelect.innerHTML = options;
-}
-
-async function loadSlots() {
-  const params = new URLSearchParams();
-  params.set("includeBooked", "false");
-
-  const courseId = courseSelect.value;
-  const date = dateInput.value;
-
-  if (courseId) params.set("courseId", courseId);
-  if (date) params.set("date", date);
-
-  setMessage(messageNode, "Loading slots...", "info");
-  const payload = await apiRequest(`/slots?${params.toString()}`);
-  slotsCache = payload.slots;
-  renderSlots(slotsCache);
-  setMessage(messageNode, "", "info");
-}
-
-async function bookSlot(slotId) {
-  try {
-    setMessage(messageNode, "Creating booking...", "info");
-
-    const note = window.prompt("Optional booking note (leave blank if none):", "") ?? "";
-
-    await apiRequest("/appointments", {
-      method: "POST",
-      body: {
-        slot_id: Number(slotId),
-        student_id: session.user.user_id,
-        notes: note.trim()
+      if (!res.ok) {
+        box.className = "notice error";
+        box.textContent = res.message || "Booking failed.";
+      } else {
+        box.className = "notice success";
+        box.textContent = "Booked! You can view it in My Bookings.";
+        await refresh();
       }
     });
-
-    await loadSlots();
-    setMessage(messageNode, "Booking confirmed and added to My Bookings.", "success");
-  } catch (error) {
-    setMessage(messageNode, error.message, "error");
-  }
-}
-
-function attachEvents() {
-  refreshButton.addEventListener("click", async () => {
-    try {
-      await loadSlots();
-    } catch (error) {
-      setMessage(messageNode, error.message, "error");
-    }
-  });
-
-  slotsNode.addEventListener("click", async event => {
-    const button = event.target.closest("button[data-book]");
-    if (!button) return;
-
-    const slotId = button.getAttribute("data-book");
-    if (!slotId) return;
-
-    const confirmed = window.confirm("Confirm booking this slot?");
-    if (!confirmed) return;
-
-    await bookSlot(slotId);
   });
 }
 
-async function init() {
-  if (!session) return;
-  attachLogoutButtons();
-  welcomeNode.textContent = `Signed in as ${session.user.name} (${session.user.email})`;
-  dateInput.value = toDateInputValue();
+async function refresh() {
+  const courseId = document.getElementById("courseSel").value;
+  const date = document.getElementById("dateSel").value; // YYYY-MM-DD
+  const q = new URLSearchParams();
+  if (courseId) q.set("courseId", courseId);
+  if (date) q.set("date", date);
 
-  try {
-    await loadCourses();
-    await loadSlots();
-    attachEvents();
-  } catch (error) {
-    setMessage(messageNode, error.message, "error");
-  }
+  const data = await apiGet(`/slots?${q.toString()}`);
+  renderSlots(data.slots || []);
 }
 
-init();
+document.getElementById("filtersBtn").addEventListener("click", refresh);
+document.getElementById("bookingsBtn").addEventListener("click", () => {
+  window.location.href = "my-bookings.html";
+});
+
+await loadCourses();
+await refresh();

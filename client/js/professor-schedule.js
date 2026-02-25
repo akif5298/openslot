@@ -1,105 +1,58 @@
-import {
-  apiRequest,
-  attachLogoutButtons,
-  escapeHtml,
-  requireSession,
-  setMessage,
-  toDateInputValue,
-  toDisplayDateTime
-} from "./api.js";
+import { apiGet, fmtDT } from "./api.js";
+import { requireAuth, logout } from "./auth.js";
 
-const session = requireSession("professor");
+const session = requireAuth();
+if (session.user.role !== "professor") window.location.href = "student-dashboard.html";
 
-const viewSelect = document.getElementById("view");
-const dateInput = document.getElementById("date");
-const refreshButton = document.getElementById("refresh");
-const summaryNode = document.getElementById("summary");
-const scheduleNode = document.getElementById("schedule");
-const messageNode = document.getElementById("message");
+document.getElementById("who").textContent = `${session.user.name} (Professor)`;
+document.getElementById("logoutBtn").addEventListener("click", logout);
+document.getElementById("backBtn").addEventListener("click", () => {
+  window.location.href = "professor-dashboard.html";
+});
 
-function badge(slot) {
-  if (slot.is_booked) return '<span class="badge badge-booked">booked</span>';
-  return `<span class="badge badge-${escapeHtml(slot.status)}">${escapeHtml(slot.status)}</span>`;
-}
+const dateSel = document.getElementById("dateSel");
+dateSel.value = new Date().toISOString().slice(0, 10);
 
-function renderSummary(summary) {
-  summaryNode.innerHTML = `
-    <div class="kv"><p>Total Slots</p><h4>${summary.total}</h4></div>
-    <div class="kv"><p>Open</p><h4>${summary.open}</h4></div>
-    <div class="kv"><p>Booked</p><h4>${summary.booked}</h4></div>
-    <div class="kv"><p>Draft</p><h4>${summary.draft}</h4></div>
-    <div class="kv"><p>Cancelled</p><h4>${summary.cancelled}</h4></div>
-  `;
-}
+async function load() {
+  const view = document.getElementById("viewSel").value;
+  const date = dateSel.value;
 
-function renderSchedule(slots) {
-  if (!slots.length) {
-    scheduleNode.innerHTML = '<div class="card"><p class="subtle">No slots in this date range.</p></div>';
+  const notice = document.getElementById("notice");
+  notice.className = "notice";
+  notice.textContent = "Loading...";
+
+  const q = new URLSearchParams({ view, date });
+  const data = await apiGet(`/schedule/professor/${session.user.user_id}?${q.toString()}`);
+
+  if (!data.ok) {
+    notice.className = "notice error";
+    notice.textContent = data.message || "Failed to load.";
     return;
   }
 
-  scheduleNode.innerHTML = slots
-    .map(
-      slot => `
-      <article class="slot-card">
-        <h3 class="slot-title">${escapeHtml(slot.course_code)} · ${escapeHtml(slot.course_name)}</h3>
-        <p class="meta"><strong>When:</strong> ${escapeHtml(toDisplayDateTime(slot.start_time))} - ${escapeHtml(
-        toDisplayDateTime(slot.end_time)
-      )}</p>
-        <p class="meta"><strong>Mode:</strong> ${escapeHtml(slot.mode)} | <strong>Location/Link:</strong> ${escapeHtml(
-        slot.location_or_link || "TBA"
-      )}</p>
-        <p class="meta"><strong>Status:</strong> ${badge(slot)}</p>
-      </article>
-    `
-    )
-    .join("");
-}
+  notice.className = "notice success";
+  notice.textContent = `Loaded ${data.slots.length} slot(s).`;
 
-async function loadSchedule() {
-  const params = new URLSearchParams({
-    view: viewSelect.value,
-    date: dateInput.value
-  });
+  const body = document.getElementById("body");
+  body.innerHTML = "";
 
-  setMessage(messageNode, "Loading schedule...", "info");
-  const payload = await apiRequest(`/schedule/professor/${session.user.user_id}?${params.toString()}`);
-
-  renderSummary(payload.summary);
-  renderSchedule(payload.slots);
-  setMessage(messageNode, "", "info");
-}
-
-function attachEvents() {
-  refreshButton.addEventListener("click", async () => {
-    try {
-      await loadSchedule();
-    } catch (error) {
-      setMessage(messageNode, error.message, "error");
-    }
-  });
-
-  viewSelect.addEventListener("change", async () => {
-    try {
-      await loadSchedule();
-    } catch (error) {
-      setMessage(messageNode, error.message, "error");
-    }
-  });
-}
-
-async function init() {
-  if (!session) return;
-
-  attachLogoutButtons();
-  dateInput.value = toDateInputValue(new Date());
-  attachEvents();
-
-  try {
-    await loadSchedule();
-  } catch (error) {
-    setMessage(messageNode, error.message, "error");
+  if (!data.slots.length) {
+    body.innerHTML = `<tr><td colspan="4"><small>No slots in this range.</small></td></tr>`;
+    return;
   }
+
+  data.slots.forEach(s => {
+    const bookedBadge = s.booked ? `<span class="badge posted">Booked</span>` : `<span class="badge">Open</span>`;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.course_code}</td>
+      <td>${fmtDT(s.start_time)} → ${fmtDT(s.end_time)}</td>
+      <td><span class="badge ${s.status}">${s.status}</span></td>
+      <td>${bookedBadge}</td>
+    `;
+    body.appendChild(tr);
+  });
 }
 
-init();
+document.getElementById("loadBtn").addEventListener("click", load);
+await load();

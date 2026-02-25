@@ -1,151 +1,69 @@
-import {
-  apiRequest,
-  attachLogoutButtons,
-  escapeHtml,
-  requireSession,
-  setMessage,
-  toDisplayDateTime
-} from "./api.js";
+import { apiGet, apiPatch } from "./api.js";
+import { requireAuth, logout } from "./auth.js";
+import { fmtDT } from "./api.js";
 
-const session = requireSession("professor");
+const session = requireAuth();
+if (session.user.role !== "professor") window.location.href = "student-dashboard.html";
 
-const welcomeNode = document.getElementById("welcome");
-const statusSelect = document.getElementById("status-filter");
-const refreshButton = document.getElementById("refresh-button");
-const slotsNode = document.getElementById("slots");
-const messageNode = document.getElementById("message");
+document.getElementById("who").textContent = `${session.user.name} (Professor)`;
+document.getElementById("logoutBtn").addEventListener("click", logout);
 
-function badge(status, isBooked) {
-  if (isBooked && status === "posted") return '<span class="badge badge-booked">booked</span>';
-  const key = String(status || "").toLowerCase();
-  return `<span class="badge badge-${escapeHtml(key)}">${escapeHtml(status)}</span>`;
-}
+document.getElementById("createBtn").addEventListener("click", () => {
+  window.location.href = "slot-create.html";
+});
 
-function renderSlots(slots) {
-  if (!slots.length) {
-    slotsNode.innerHTML = '<div class="card"><p class="subtle">No slots found for this filter.</p></div>';
+async function refresh() {
+  const q = new URLSearchParams();
+  q.set("professorId", session.user.user_id);
+  q.set("includeBooked", "true");
+
+  const data = await apiGet(`/slots?${q.toString()}`);
+  const tbody = document.getElementById("slotsBody");
+  tbody.innerHTML = "";
+
+  if (!data.slots?.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><small>No slots yet. Create one!</small></td></tr>`;
     return;
   }
 
-  slotsNode.innerHTML = slots
-    .map(
-      slot => `
-      <article class="slot-card" data-slot="${slot.slot_id}">
-        <h3 class="slot-title">${escapeHtml(slot.course_code)} · ${escapeHtml(slot.course_name)}</h3>
-        <p class="meta"><strong>When:</strong> ${escapeHtml(toDisplayDateTime(slot.start_time))} - ${escapeHtml(
-        toDisplayDateTime(slot.end_time)
-      )}</p>
-        <p class="meta"><strong>Mode:</strong> ${escapeHtml(slot.mode)} | <strong>Visibility:</strong> ${escapeHtml(
-        slot.visibility
-      )}</p>
-        <p class="meta"><strong>Location/Link:</strong> ${escapeHtml(slot.location_or_link || "TBA")}</p>
-        <p class="meta"><strong>Status:</strong> ${badge(slot.status, slot.is_booked)}</p>
-        <p class="meta"><strong>Booked By:</strong> ${slot.booked_by ? `Student #${escapeHtml(slot.booked_by)}` : "Open"}</p>
-        <div class="inline-actions">
-          <a class="btn btn-link" href="slot-create.html?slotId=${slot.slot_id}">Edit</a>
-          <button class="btn-secondary" data-post="${slot.slot_id}" ${
-        slot.status === "posted" ? "disabled" : ""
-      }>Post</button>
-          <button class="btn-secondary" data-draft="${slot.slot_id}" ${
-        slot.status === "draft" ? "disabled" : ""
-      }>Move to Draft</button>
-          <button class="btn-danger" data-cancel="${slot.slot_id}" ${
-        slot.status === "cancelled" ? "disabled" : ""
-      }>Cancel Slot</button>
-        </div>
-      </article>
-    `
-    )
-    .join("");
-}
+  data.slots.forEach(s => {
+    const bookedText = s.booked_by ? `Booked (student #${s.booked_by})` : "Open";
 
-async function loadSlots() {
-  const params = new URLSearchParams({
-    professorId: String(session.user.user_id),
-    includeBooked: "true",
-    includePrivate: "true"
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.course_code}</td>
+      <td>${fmtDT(s.start_time)}</td>
+      <td>${fmtDT(s.end_time)}</td>
+      <td><span class="badge">${s.mode}</span></td>
+      <td><span class="badge ${s.status}">${s.status}</span></td>
+      <td><small>${bookedText}</small></td>
+      <td class="row">
+        <button class="btn primary" data-action="post" data-id="${s.slot_id}">Post</button>
+        <button class="btn" data-action="draft" data-id="${s.slot_id}">Draft</button>
+        <button class="btn danger" data-action="cancel" data-id="${s.slot_id}">Cancel</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
 
-  if (statusSelect.value !== "all") {
-    params.set("status", statusSelect.value);
-  }
+  tbody.querySelectorAll("button[data-id]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = Number(btn.dataset.id);
+      const action = btn.dataset.action;
+      const status = action === "post" ? "posted" : action === "draft" ? "draft" : "cancelled";
 
-  setMessage(messageNode, "Loading slots...", "info");
-  const payload = await apiRequest(`/slots?${params.toString()}`);
-  renderSlots(payload.slots);
-  setMessage(messageNode, "", "info");
-}
-
-async function updateSlotStatus(slotId, status) {
-  await apiRequest(`/slots/${slotId}/status`, {
-    method: "PATCH",
-    body: { status }
-  });
-}
-
-function attachEvents() {
-  refreshButton.addEventListener("click", async () => {
-    try {
-      await loadSlots();
-    } catch (error) {
-      setMessage(messageNode, error.message, "error");
-    }
-  });
-
-  statusSelect.addEventListener("change", async () => {
-    try {
-      await loadSlots();
-    } catch (error) {
-      setMessage(messageNode, error.message, "error");
-    }
-  });
-
-  slotsNode.addEventListener("click", async event => {
-    const postButton = event.target.closest("button[data-post]");
-    const draftButton = event.target.closest("button[data-draft]");
-    const cancelButton = event.target.closest("button[data-cancel]");
-
-    try {
-      if (postButton) {
-        const slotId = postButton.getAttribute("data-post");
-        await updateSlotStatus(slotId, "posted");
-        await loadSlots();
-        setMessage(messageNode, "Slot posted.", "success");
+      const res = await apiPatch(`/slots/${id}/status`, { status });
+      const box = document.getElementById("notice");
+      if (!res.ok) {
+        box.className = "notice error";
+        box.textContent = res.message || "Update failed.";
+      } else {
+        box.className = "notice success";
+        box.textContent = `Updated slot #${id} → ${status}`;
+        await refresh();
       }
-
-      if (draftButton) {
-        const slotId = draftButton.getAttribute("data-draft");
-        await updateSlotStatus(slotId, "draft");
-        await loadSlots();
-        setMessage(messageNode, "Slot moved to draft.", "success");
-      }
-
-      if (cancelButton) {
-        const slotId = cancelButton.getAttribute("data-cancel");
-        if (!window.confirm("Cancel this slot? If booked, the booking will be cancelled.")) return;
-        await updateSlotStatus(slotId, "cancelled");
-        await loadSlots();
-        setMessage(messageNode, "Slot cancelled.", "success");
-      }
-    } catch (error) {
-      setMessage(messageNode, error.message, "error");
-    }
+    });
   });
 }
 
-async function init() {
-  if (!session) return;
-
-  attachLogoutButtons();
-  welcomeNode.textContent = `Signed in as ${session.user.name} (${session.user.email})`;
-
-  attachEvents();
-
-  try {
-    await loadSlots();
-  } catch (error) {
-    setMessage(messageNode, error.message, "error");
-  }
-}
-
-init();
+await refresh();

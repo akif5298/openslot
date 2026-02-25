@@ -43,5 +43,5 @@ form?.addEventListener("submit", async event => {
     window.location.href = "student-dashboard.html";
   } catch (error) {
     setMessage(messageNode, error.message, "error");
-  }
+}
 });

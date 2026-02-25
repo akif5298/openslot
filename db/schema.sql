@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS office_hour_slots (
   FOREIGN KEY (professor_id) REFERENCES users (user_id),
   FOREIGN KEY (course_id) REFERENCES courses (course_id),
   FOREIGN KEY (booked_by) REFERENCES users (user_id),
-  CHECK (end_time > start_time)
+    CHECK (end_time > start_time)
 );
 
 CREATE TABLE IF NOT EXISTS appointments (

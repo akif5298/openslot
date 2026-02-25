@@ -13,7 +13,7 @@
         <div>
           <h1 id="page-title">Create Availability Slot</h1>
           <p class="subtle">Draft or post office-hour slots for students.</p>
-        </div>
+      </div>
         <nav class="nav-row">
           <a class="btn btn-link" href="professor-dashboard.html">Back to Dashboard</a>
           <button class="btn-secondary" data-logout>Logout</button>
@@ -25,7 +25,7 @@
           <div>
             <label for="course_id">Course</label>
             <select id="course_id" required></select>
-          </div>
+    </div>
           <div>
             <label for="date">Date</label>
             <input id="date" type="date" required />
@@ -37,7 +37,7 @@
           <div>
             <label for="end_time">End Time</label>
             <input id="end_time" type="time" required />
-          </div>
+        </div>
           <div>
             <label for="mode">Mode</label>
             <select id="mode">
@@ -55,14 +55,14 @@
           <div class="grid" style="grid-column: 1 / -1;">
             <label for="location_or_link">Location or Video Link</label>
             <input id="location_or_link" type="text" placeholder="Room number or meeting URL" />
-          </div>
+        </div>
           <div>
             <label for="status">Initial Status</label>
             <select id="status">
-              <option value="draft">Draft</option>
+          <option value="draft">Draft</option>
               <option value="posted">Post immediately</option>
               <option value="cancelled">Cancelled</option>
-            </select>
+        </select>
           </div>
           <div class="grid" style="grid-column: 1 / -1;">
             <label for="notes">Notes (optional)</label>
@@ -70,8 +70,8 @@
           </div>
           <div class="inline-actions" style="grid-column: 1 / -1;">
             <button id="submit-button" class="btn-primary" type="submit">Create Slot</button>
-          </div>
-        </form>
+        </div>
+      </form>
         <p id="message" class="message message-info"></p>
       </section>
     </section>

@@ -1,134 +1,62 @@
-import {
-  apiRequest,
-  attachLogoutButtons,
-  buildLocalDateTime,
-  escapeHtml,
-  requireSession,
-  setMessage,
-  toDateTimeLocalPair
-} from "./api.js";
+import { apiGet, apiPost } from "./api.js";
+import { requireAuth, logout } from "./auth.js";
 
-const session = requireSession("professor");
+const session = requireAuth();
+if (session.user.role !== "professor") window.location.href = "student-dashboard.html";
 
-const form = document.getElementById("slot-form");
-const pageTitleNode = document.getElementById("page-title");
-const submitButton = document.getElementById("submit-button");
-const courseSelect = document.getElementById("course_id");
-const dateInput = document.getElementById("date");
-const startInput = document.getElementById("start_time");
-const endInput = document.getElementById("end_time");
-const modeInput = document.getElementById("mode");
-const locationInput = document.getElementById("location_or_link");
-const visibilityInput = document.getElementById("visibility");
-const statusInput = document.getElementById("status");
-const notesInput = document.getElementById("notes");
-const messageNode = document.getElementById("message");
+document.getElementById("who").textContent = `${session.user.name} (Professor)`;
+document.getElementById("logoutBtn").addEventListener("click", logout);
 
-const params = new URLSearchParams(window.location.search);
-const editingSlotId = Number(params.get("slotId"));
-const isEditing = Number.isFinite(editingSlotId) && editingSlotId > 0;
-
-function slotPayload() {
-  const start = buildLocalDateTime(dateInput.value, startInput.value);
-  const end = buildLocalDateTime(dateInput.value, endInput.value);
-
-  return {
-    professor_id: session.user.user_id,
-    course_id: Number(courseSelect.value),
-    start_time: start,
-    end_time: end,
-    mode: modeInput.value,
-    location_or_link: locationInput.value.trim(),
-    visibility: visibilityInput.value,
-    status: statusInput.value,
-    notes: notesInput.value.trim()
-  };
-}
+document.getElementById("backBtn").addEventListener("click", () => {
+  window.location.href = "professor-dashboard.html";
+});
 
 async function loadCourses() {
-  const payload = await apiRequest("/courses");
-  courseSelect.innerHTML = payload.courses
-    .map(course => `<option value="${course.course_id}">${escapeHtml(course.course_code)} · ${escapeHtml(course.course_name)}</option>`)
-    .join("");
+  const data = await apiGet("/courses");
+  const sel = document.getElementById("courseSel");
+  sel.innerHTML = "";
+  data.courses.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.course_id;
+    opt.textContent = `${c.course_code} — ${c.course_name} (${c.term})`;
+    sel.appendChild(opt);
+  });
 }
 
-async function loadSlot(slotId) {
-  const payload = await apiRequest(`/slots/${slotId}`);
-  const slot = payload.slot;
+document.getElementById("createForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-  if (slot.professor_id !== session.user.user_id) {
-    throw new Error("You can only edit your own slots.");
+  const course_id = Number(document.getElementById("courseSel").value);
+  const start_time = document.getElementById("startDT").value;
+  const end_time = document.getElementById("endDT").value;
+  const mode = document.getElementById("modeSel").value;
+  const location_or_link = document.getElementById("loc").value.trim();
+  const visibility = document.getElementById("visSel").value;
+  const status = document.getElementById("statusSel").value;
+
+  const box = document.getElementById("notice");
+  box.className = "notice";
+  box.textContent = "Creating...";
+
+  const res = await apiPost("/slots", {
+    professor_id: session.user.user_id,
+    course_id,
+    start_time,
+    end_time,
+    mode,
+    location_or_link,
+    visibility,
+    status
+  });
+
+  if (!res.ok) {
+    box.className = "notice error";
+    box.textContent = res.message || "Create failed.";
+    return;
   }
 
-  const start = toDateTimeLocalPair(slot.start_time);
-  const end = toDateTimeLocalPair(slot.end_time);
+  box.className = "notice success";
+  box.textContent = `Created slot #${res.slot.slot_id} (${res.slot.status}).`;
+});
 
-  courseSelect.value = String(slot.course_id);
-  dateInput.value = start.date;
-  startInput.value = start.time;
-  endInput.value = end.time;
-  modeInput.value = slot.mode;
-  locationInput.value = slot.location_or_link || "";
-  visibilityInput.value = slot.visibility;
-  statusInput.value = slot.status;
-  notesInput.value = slot.notes || "";
-}
-
-async function submitForm(event) {
-  event.preventDefault();
-  try {
-    const payload = slotPayload();
-
-    if (!payload.course_id || !payload.start_time || !payload.end_time) {
-      throw new Error("Course, date, start time, and end time are required.");
-    }
-
-    if (new Date(payload.start_time) >= new Date(payload.end_time)) {
-      throw new Error("End time must be later than start time.");
-    }
-
-    setMessage(messageNode, isEditing ? "Updating slot..." : "Creating slot...", "info");
-
-    if (isEditing) {
-      await apiRequest(`/slots/${editingSlotId}`, {
-        method: "PATCH",
-        body: payload
-      });
-      setMessage(messageNode, "Slot updated.", "success");
-    } else {
-      await apiRequest("/slots", {
-        method: "POST",
-        body: payload
-      });
-      form.reset();
-      setMessage(messageNode, "Slot created.", "success");
-    }
-
-    window.setTimeout(() => {
-      window.location.href = "professor-dashboard.html";
-    }, 650);
-  } catch (error) {
-    setMessage(messageNode, error.message, "error");
-  }
-}
-
-async function init() {
-  if (!session) return;
-
-  attachLogoutButtons();
-  form.addEventListener("submit", submitForm);
-
-  try {
-    await loadCourses();
-
-    if (isEditing) {
-      pageTitleNode.textContent = `Edit Slot #${editingSlotId}`;
-      submitButton.textContent = "Save Changes";
-      await loadSlot(editingSlotId);
-    }
-  } catch (error) {
-    setMessage(messageNode, error.message, "error");
-  }
-}
-
-init();
+await loadCourses();

@@ -1,160 +1,87 @@
-import {
-  apiRequest,
-  attachLogoutButtons,
-  escapeHtml,
-  requireSession,
-  setMessage,
-  toDisplayDateTime
-} from "./api.js";
+import { apiGet, apiPatch, fmtDT } from "./api.js";
+import { requireAuth, logout } from "./auth.js";
 
-const session = requireSession("student");
+const session = requireAuth();
+if (session.user.role !== "student") window.location.href = "professor-dashboard.html";
 
-const welcomeNode = document.getElementById("welcome");
-const bookingsNode = document.getElementById("bookings");
-const messageNode = document.getElementById("message");
+document.getElementById("who").textContent = `${session.user.name} (Student)`;
+document.getElementById("logoutBtn").addEventListener("click", logout);
 
-function canChange(slotStart, status) {
-  if (status !== "booked") return false;
-  return Date.now() < new Date(slotStart).getTime();
-}
+async function refresh() {
+  const data = await apiGet(`/appointments/mine/${session.user.user_id}`);
+  const tbody = document.getElementById("bookingsBody");
+  tbody.innerHTML = "";
 
-function toStatusBadge(status) {
-  const key = (status || "").toLowerCase();
-  const klass = `badge-${key === "booked" ? "upcoming" : key}`;
-  return `<span class="badge ${klass}">${escapeHtml(status)}</span>`;
-}
-
-function renderBookings(bookings) {
-  if (!bookings.length) {
-    bookingsNode.innerHTML = '<div class="card"><p class="subtle">No bookings yet.</p></div>';
+  if (!data.bookings?.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><small>No bookings yet.</small></td></tr>`;
     return;
   }
 
-  bookingsNode.innerHTML = bookings
-    .map(booking => {
-      const slot = booking.slot || {};
-      const changeAllowed = canChange(slot.start_time, booking.status);
+  for (const b of data.bookings) {
+    const slotRes = await apiGet(`/slots/${b.slot_id}`);
+    const s = slotRes.slot;
 
-      return `
-      <article class="slot-card">
-        <h3 class="slot-title">${escapeHtml(slot.course_code || "Course")} · ${escapeHtml(slot.course_name || "")}</h3>
-        <p class="meta"><strong>Professor:</strong> ${escapeHtml(slot.professor_name || "")}</p>
-        <p class="meta"><strong>When:</strong> ${escapeHtml(toDisplayDateTime(slot.start_time || ""))} - ${escapeHtml(
-        toDisplayDateTime(slot.end_time || "")
-      )}</p>
-        <p class="meta"><strong>Mode:</strong> ${escapeHtml(slot.mode || "")}</p>
-        <p class="meta"><strong>Location/Link:</strong> ${escapeHtml(slot.location_or_link || "TBA")}</p>
-        <p class="meta"><strong>Status:</strong> ${toStatusBadge(booking.status)}</p>
-        <div class="inline-actions">
-          <a class="btn btn-link" href="appointment-details.html?appointmentId=${booking.appointment_id}">View Details</a>
-          <button class="btn-danger" data-cancel="${booking.appointment_id}" ${
-        changeAllowed ? "" : "disabled"
-      }>Cancel</button>
-          <button class="btn-secondary" data-reschedule="${booking.appointment_id}" data-course="${
-        slot.course_id || ""
-      }" ${changeAllowed ? "" : "disabled"}>Reschedule</button>
-        </div>
-      </article>
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.course_code}</td>
+      <td>${s.professor_name}</td>
+      <td>${fmtDT(s.start_time)} → ${fmtDT(s.end_time)}</td>
+      <td><span class="badge ${b.status}">${b.status}</span></td>
+      <td>
+        <button class="btn" data-action="details" data-id="${b.appointment_id}">Details</button>
+      </td>
+      <td class="row">
+        ${b.status === "booked" ? `<button class="btn" data-action="reschedule" data-id="${b.appointment_id}">Reschedule</button>` : ""}
+        ${b.status === "booked" ? `<button class="btn danger" data-action="cancel" data-id="${b.appointment_id}">Cancel</button>` : ""}
+      </td>
     `;
-    })
-    .join("");
-}
-
-async function loadBookings() {
-  setMessage(messageNode, "Loading bookings...", "info");
-  const payload = await apiRequest(`/appointments/mine/${session.user.user_id}`);
-  renderBookings(payload.bookings);
-  setMessage(messageNode, "", "info");
-}
-
-async function cancelBooking(appointmentId) {
-  await apiRequest(`/appointments/${appointmentId}/cancel`, { method: "PATCH" });
-}
-
-async function rescheduleBooking(appointmentId, courseId) {
-  const params = new URLSearchParams({ includeBooked: "false" });
-  if (courseId) params.set("courseId", String(courseId));
-
-  const openSlotsPayload = await apiRequest(`/slots?${params.toString()}`);
-  const slots = openSlotsPayload.slots;
-
-  if (!slots.length) {
-    throw new Error("No open slots available to reschedule right now.");
+    tbody.appendChild(tr);
   }
 
-  const choicePrompt = slots
-    .slice(0, 8)
-    .map(
-      slot =>
-        `${slot.slot_id}: ${slot.course_code} ${toDisplayDateTime(slot.start_time)} (${slot.professor_name})`
-    )
-    .join("\n");
+  tbody.querySelectorAll("button[data-id]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = Number(btn.dataset.id);
+      const action = btn.dataset.action;
+      const box = document.getElementById("notice");
 
-  const userInput = window.prompt(
-    `Enter new slot ID:\n\n${choicePrompt}\n\n(Only first 8 options shown)`,
-    String(slots[0].slot_id)
-  );
-
-  if (!userInput) return;
-  const newSlotId = Number(userInput);
-  if (!Number.isFinite(newSlotId)) {
-    throw new Error("Invalid slot ID for reschedule.");
-  }
-
-  await apiRequest(`/appointments/${appointmentId}/reschedule`, {
-    method: "PATCH",
-    body: { new_slot_id: newSlotId }
-  });
-}
-
-function attachEvents() {
-  bookingsNode.addEventListener("click", async event => {
-    const cancelButton = event.target.closest("button[data-cancel]");
-    const rescheduleButton = event.target.closest("button[data-reschedule]");
-
-    try {
-      if (cancelButton) {
-        const appointmentId = cancelButton.getAttribute("data-cancel");
-        if (!appointmentId) return;
-
-        const confirmed = window.confirm("Cancel this appointment?");
-        if (!confirmed) return;
-
-        setMessage(messageNode, "Cancelling appointment...", "info");
-        await cancelBooking(appointmentId);
-        await loadBookings();
-        setMessage(messageNode, "Appointment cancelled.", "success");
+      if (action === "details") {
+        window.location.href = `appointment-details.html?id=${id}`;
         return;
       }
 
-      if (rescheduleButton) {
-        const appointmentId = rescheduleButton.getAttribute("data-reschedule");
-        const courseId = rescheduleButton.getAttribute("data-course");
-        if (!appointmentId) return;
-
-        setMessage(messageNode, "Loading open slots for reschedule...", "info");
-        await rescheduleBooking(appointmentId, courseId);
-        await loadBookings();
-        setMessage(messageNode, "Appointment rescheduled.", "success");
+      if (action === "cancel") {
+        const res = await apiPatch(`/appointments/${id}/cancel`, {});
+        if (!res.ok) {
+          box.className = "notice error";
+          box.textContent = res.message || "Cancel failed.";
+        } else {
+          box.className = "notice success";
+          box.textContent = "Cancelled.";
+          await refresh();
+        }
+        return;
       }
-    } catch (error) {
-      setMessage(messageNode, error.message, "error");
-    }
+
+      if (action === "reschedule") {
+        const newSlotId = prompt("Enter the NEW slot ID you want (from the Student dashboard list):");
+        if (!newSlotId) return;
+
+        const res = await apiPatch(`/appointments/${id}/reschedule`, { new_slot_id: Number(newSlotId) });
+        if (!res.ok) {
+          box.className = "notice error";
+          box.textContent = res.message || "Reschedule failed.";
+        } else {
+          box.className = "notice success";
+          box.textContent = "Rescheduled.";
+          await refresh();
+        }
+      }
+    });
   });
 }
 
-async function init() {
-  if (!session) return;
+document.getElementById("backBtn").addEventListener("click", () => {
+  window.location.href = "student-dashboard.html";
+});
 
-  attachLogoutButtons();
-  welcomeNode.textContent = `Signed in as ${session.user.name} (${session.user.email})`;
-  attachEvents();
-
-  try {
-    await loadBookings();
-  } catch (error) {
-    setMessage(messageNode, error.message, "error");
-  }
-}
-
-init();
+await refresh();

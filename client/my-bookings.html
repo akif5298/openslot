@@ -1,33 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenSlot | My Bookings</title>
+  <meta charset="utf-8" />
+  <title>OpenSlot — My Bookings</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <main class="page">
-    <section class="shell">
-      <header class="topbar">
-        <div>
-          <h1>My Bookings</h1>
-          <p class="subtle" id="welcome"></p>
-        </div>
-        <nav class="nav-row">
-          <a class="btn btn-link" href="student-dashboard.html">Browse Slots</a>
-          <button class="btn-secondary" data-logout>Logout</button>
-        </nav>
-      </header>
+  <div class="container">
+    <div class="nav">
+      <div class="brand">OpenSlot</div>
+      <div class="row">
+        <span class="pill" id="who"></span>
+        <button class="btn" id="backBtn">Back</button>
+        <button class="btn danger" id="logoutBtn">Logout</button>
+      </div>
+    </div>
 
-      <section class="card">
-        <p class="subtle">View upcoming/past appointments and cancel or reschedule before start time.</p>
-        <p id="message" class="message message-info"></p>
-      </section>
+    <div id="notice" class="notice"></div>
 
-      <section id="bookings" class="grid" style="margin-top: 14px;"></section>
-    </section>
-  </main>
-  <script type="module" src="js/bookings.js"></script>
+    <div class="card">
+      <h2>My bookings</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Professor</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th></th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bookingsBody"></tbody>
+      </table>
+      <p><small>Reschedule: use slot IDs from the Student dashboard list (Milestone 2 UI simplification).</small></p>
+    </div>
+  </div>
+
+  <script type="module" src="./js/bookings.js"></script>
 </body>
 </html>

@@ -1,94 +1,37 @@
-import {
-  apiRequest,
-  attachLogoutButtons,
-  escapeHtml,
-  requireSession,
-  setMessage,
-  toDisplayDateTime
-} from "./api.js";
+import { apiGet, fmtDT } from "./api.js";
+import { requireAuth, logout } from "./auth.js";
 
-const session = requireSession();
+const session = requireAuth();
+document.getElementById("who").textContent = `${session.user.name} (${session.user.role})`;
+document.getElementById("logoutBtn").addEventListener("click", logout);
+document.getElementById("backBtn").addEventListener("click", () => history.back());
 
-const headingNode = document.getElementById("heading");
-const detailsNode = document.getElementById("details");
-const messageNode = document.getElementById("message");
+const params = new URLSearchParams(window.location.search);
+const appointmentId = params.get("id");
 
-function getAppointmentId() {
-  const params = new URLSearchParams(window.location.search);
-  const value = Number(params.get("appointmentId"));
-  if (!Number.isFinite(value) || value <= 0) return null;
-  return Math.trunc(value);
-}
+const notice = document.getElementById("notice");
+const details = document.getElementById("details");
 
-function statusBadge(status) {
-  const key = (status || "").toLowerCase();
-  const klass = key === "booked" ? "badge-upcoming" : `badge-${key}`;
-  return `<span class="badge ${klass}">${escapeHtml(status)}</span>`;
-}
+if (!appointmentId) {
+  notice.className = "notice error";
+  notice.textContent = "Missing appointment id.";
+} else {
+  const data = await apiGet(`/appointments/${appointmentId}`);
+  if (!data.ok) {
+    notice.className = "notice error";
+    notice.textContent = data.message || "Failed to load details.";
+  } else {
+    const a = data.appointment;
+    const s = data.slot;
 
-function render(payload) {
-  const { appointment, slot, student } = payload;
-
-  headingNode.textContent = `Appointment #${appointment.appointment_id}`;
-
-  detailsNode.innerHTML = `
-    <div class="info-grid">
-      <div class="kv">
-        <p>Status</p>
-        <h4>${statusBadge(appointment.status)}</h4>
-      </div>
-      <div class="kv">
-        <p>Student</p>
-        <h4>${escapeHtml(student?.name || "Unknown")}</h4>
-      </div>
-      <div class="kv">
-        <p>Course</p>
-        <h4>${escapeHtml(slot.course_code)} · ${escapeHtml(slot.course_name)}</h4>
-      </div>
-      <div class="kv">
-        <p>Professor</p>
-        <h4>${escapeHtml(slot.professor_name)}</h4>
-      </div>
-      <div class="kv">
-        <p>Starts</p>
-        <h4>${escapeHtml(toDisplayDateTime(slot.start_time))}</h4>
-      </div>
-      <div class="kv">
-        <p>Ends</p>
-        <h4>${escapeHtml(toDisplayDateTime(slot.end_time))}</h4>
-      </div>
-      <div class="kv">
-        <p>Mode</p>
-        <h4>${escapeHtml(slot.mode)}</h4>
-      </div>
-      <div class="kv">
-        <p>Location / Link</p>
-        <h4>${escapeHtml(slot.location_or_link || "TBA")}</h4>
-      </div>
-    </div>
-    <hr />
-    <p><strong>Booking Note:</strong> ${escapeHtml(appointment.notes || "No note provided")}</p>
-  `;
-}
-
-async function init() {
-  if (!session) return;
-  attachLogoutButtons();
-
-  const appointmentId = getAppointmentId();
-  if (!appointmentId) {
-    setMessage(messageNode, "Missing appointmentId in URL.", "error");
-    return;
-  }
-
-  try {
-    setMessage(messageNode, "Loading appointment details...", "info");
-    const payload = await apiRequest(`/appointments/${appointmentId}`);
-    render(payload);
-    setMessage(messageNode, "", "info");
-  } catch (error) {
-    setMessage(messageNode, error.message, "error");
+    details.innerHTML = `
+      <p><b>Status:</b> <span class="badge ${a.status}">${a.status}</span></p>
+      <p><b>Course:</b> ${s.course_code} — ${s.course_name}</p>
+      <p><b>Professor:</b> ${s.professor_name}</p>
+      <p><b>Date/Time:</b> ${fmtDT(s.start_time)} → ${fmtDT(s.end_time)}</p>
+      <p><b>Mode:</b> ${s.mode}</p>
+      <p><b>Location/Link:</b> ${s.location_or_link}</p>
+      <p><b>Notes:</b><br/>${(a.notes || "").replaceAll("<","&lt;")}</p>
+    `;
   }
 }
-
-init();
