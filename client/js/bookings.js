@@ -1,87 +1,104 @@
-import { apiGet, apiPatch, fmtDT } from "./api.js";
-import { requireAuth, logout } from "./auth.js";
+import { apiGet, apiPatch, escapeHtml, fmtDate, fmtRange, initials, setMessage } from "./api.js";
+import { logout, requireAuth } from "./auth.js";
 
-const session = requireAuth();
-if (session.user.role !== "student") window.location.href = "professor-dashboard.html";
+const session = requireAuth("student");
+if (!session) throw new Error("No active session");
 
-document.getElementById("who").textContent = `${session.user.name} (Student)`;
-document.getElementById("logoutBtn").addEventListener("click", logout);
+const avatarNode = document.getElementById("user-avatar");
+const logoutBtn = document.getElementById("logout-btn");
+const upcomingList = document.getElementById("upcoming-list");
+const pastList = document.getElementById("past-list");
+const noticeNode = document.getElementById("notice");
 
-async function refresh() {
-  const data = await apiGet(`/appointments/mine/${session.user.user_id}`);
-  const tbody = document.getElementById("bookingsBody");
-  tbody.innerHTML = "";
+avatarNode.textContent = initials(session.user.name);
+logoutBtn?.addEventListener("click", logout);
 
-  if (!data.bookings?.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><small>No bookings yet.</small></td></tr>`;
+function renderSection(node, bookings, past = false) {
+  if (!bookings.length) {
+    node.innerHTML = `<article class="card card-flat">${past ? "No past sessions yet." : "No upcoming sessions yet."}</article>`;
     return;
   }
 
-  for (const b of data.bookings) {
-    const slotRes = await apiGet(`/slots/${b.slot_id}`);
-    const s = slotRes.slot;
+  node.innerHTML = bookings
+    .map(booking => {
+      const slot = booking.slot || {};
+      const canEdit = booking.status === "booked" && new Date(slot.start_time).getTime() > Date.now();
+      const course = `${slot.course_code || "COURSE"} ${slot.course_name ? `· ${slot.course_name}` : ""}`;
+      return `
+        <article class="session-item">
+          <div class="avatar">${escapeHtml(initials(slot.professor_name || "P"))}</div>
+          <div class="session-main">
+            <div class="line-1">
+              <strong>${escapeHtml(slot.professor_name || "Professor")}</strong>
+              <span class="badge ${escapeHtml(booking.status)}">${escapeHtml(booking.status)}</span>
+            </div>
+            <div class="line-2">${escapeHtml(course)}</div>
+            <div class="line-3">${fmtDate(slot.start_time)} · ${fmtRange(slot.start_time, slot.end_time)}</div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <a class="btn-outline" href="appointment-details.html?id=${booking.appointment_id}">View Details</a>
+            ${
+              canEdit
+                ? `<button class="btn-ghost" data-action="reschedule" data-id="${booking.appointment_id}" type="button">Reschedule</button>
+                   <button class="btn-danger" data-action="cancel" data-id="${booking.appointment_id}" type="button">Cancel</button>`
+                : ""
+            }
+          </div>
+        </article>
+      `;
+    })
+    .join("");
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${s.course_code}</td>
-      <td>${s.professor_name}</td>
-      <td>${fmtDT(s.start_time)} → ${fmtDT(s.end_time)}</td>
-      <td><span class="badge ${b.status}">${b.status}</span></td>
-      <td>
-        <button class="btn" data-action="details" data-id="${b.appointment_id}">Details</button>
-      </td>
-      <td class="row">
-        ${b.status === "booked" ? `<button class="btn" data-action="reschedule" data-id="${b.appointment_id}">Reschedule</button>` : ""}
-        ${b.status === "booked" ? `<button class="btn danger" data-action="cancel" data-id="${b.appointment_id}">Cancel</button>` : ""}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
+  node.querySelectorAll("button[data-action='cancel']").forEach(button => {
+    button.addEventListener("click", async () => {
+      const appointmentId = Number(button.getAttribute("data-id"));
+      if (!appointmentId) return;
 
-  tbody.querySelectorAll("button[data-id]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const id = Number(btn.dataset.id);
-      const action = btn.dataset.action;
-      const box = document.getElementById("notice");
+      const confirmed = window.confirm("Cancel this session?");
+      if (!confirmed) return;
 
-      if (action === "details") {
-        window.location.href = `appointment-details.html?id=${id}`;
+      setMessage(noticeNode, "Cancelling appointment...", "info");
+      const result = await apiPatch(`/appointments/${appointmentId}/cancel`, {});
+      if (!result.ok) {
+        setMessage(noticeNode, result.message || "Cancel failed.", "error");
         return;
       }
+      setMessage(noticeNode, "Appointment cancelled.", "success");
+      await loadBookings();
+    });
+  });
 
-      if (action === "cancel") {
-        const res = await apiPatch(`/appointments/${id}/cancel`, {});
-        if (!res.ok) {
-          box.className = "notice error";
-          box.textContent = res.message || "Cancel failed.";
-        } else {
-          box.className = "notice success";
-          box.textContent = "Cancelled.";
-          await refresh();
-        }
-        return;
-      }
-
-      if (action === "reschedule") {
-        const newSlotId = prompt("Enter the NEW slot ID you want (from the Student dashboard list):");
-        if (!newSlotId) return;
-
-        const res = await apiPatch(`/appointments/${id}/reschedule`, { new_slot_id: Number(newSlotId) });
-        if (!res.ok) {
-          box.className = "notice error";
-          box.textContent = res.message || "Reschedule failed.";
-        } else {
-          box.className = "notice success";
-          box.textContent = "Rescheduled.";
-          await refresh();
-        }
-      }
+  node.querySelectorAll("button[data-action='reschedule']").forEach(button => {
+    button.addEventListener("click", () => {
+      const appointmentId = Number(button.getAttribute("data-id"));
+      if (!appointmentId) return;
+      window.location.href = `browse-slots.html?reschedule=${appointmentId}`;
     });
   });
 }
 
-document.getElementById("backBtn").addEventListener("click", () => {
-  window.location.href = "student-dashboard.html";
-});
+async function loadBookings() {
+  setMessage(noticeNode, "Loading bookings...", "info");
+  const result = await apiGet(`/appointments/mine/${session.user.user_id}`);
+  if (!result.ok) {
+    setMessage(noticeNode, result.message || "Unable to load bookings.", "error");
+    return;
+  }
 
-await refresh();
+  setMessage(noticeNode, "", "info");
+  const bookings = (result.bookings || []).filter(item => item.slot);
+  const now = Date.now();
+
+  const upcoming = bookings
+    .filter(item => item.status === "booked" && new Date(item.slot.start_time).getTime() > now)
+    .sort((a, b) => new Date(a.slot.start_time) - new Date(b.slot.start_time));
+
+  const past = bookings
+    .filter(item => item.status !== "booked" || new Date(item.slot.start_time).getTime() <= now)
+    .sort((a, b) => new Date(b.slot.start_time) - new Date(a.slot.start_time));
+
+  renderSection(upcomingList, upcoming, false);
+  renderSection(pastList, past, true);
+}
+
+await loadBookings();

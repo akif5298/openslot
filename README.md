@@ -28,18 +28,21 @@ Team:
 
 Student flow:
 1. Login (`client/login.html`)
-2. Browse/filter available slots (`client/student-dashboard.html`)
-3. Book slot
-4. View bookings (`client/my-bookings.html`)
-5. View details (`client/appointment-details.html`)
-6. Cancel/reschedule before start time
+2. Student home dashboard (`client/student-dashboard.html`)
+3. Browse/filter available slots (`client/browse-slots.html`)
+4. Book slot or reschedule from browse view
+5. View/manage bookings (`client/my-bookings.html`)
+6. View details (`client/appointment-details.html`)
+7. Cancel before start time
 
 Professor flow:
 1. Login (`client/login.html`)
-2. Manage slots (`client/professor-dashboard.html`)
-3. Create/edit slots (`client/slot-create.html`)
-4. Publish/cancel slots
+2. Professor home dashboard (`client/professor-dashboard.html`)
+3. Create slots (`client/slot-create.html`)
+4. Publish/cancel draft slots (`client/professor-schedule.html`)
 5. View day/week schedule (`client/professor-schedule.html`)
+6. Review course cards (`client/professor-courses.html`)
+7. Update profile settings (`client/professor-settings.html`)
 
 ## Back-End Setup
 
@@ -69,6 +72,7 @@ Demo logins:
 - `student2@demo.com`
 - `prof@demo.com`
 - `prof2@demo.com`
+- `prof3@demo.com`
 
 ### 3) Run Milestone 02 verification (optional but recommended)
 ```bash

@@ -1,16 +1,21 @@
 import { apiPost, clearSession, getSession, setMessage, setSession } from "./api.js";
 
-const loginForm = document.getElementById("login-form");
-const loginButton = document.getElementById("loginBtn");
-const emailInput = document.getElementById("email");
-const messageNode = document.getElementById("message") || document.getElementById("notice");
+function roleHome(role) {
+  return role === "professor" ? "professor-dashboard.html" : "student-dashboard.html";
+}
 
-export function requireAuth() {
+export function requireAuth(expectedRole = null) {
   const session = getSession();
   if (!session?.user) {
     window.location.href = "login.html";
     return null;
   }
+
+  if (expectedRole && session.user.role !== expectedRole) {
+    window.location.href = roleHome(session.user.role);
+    return null;
+  }
+
   return session;
 }
 
@@ -20,47 +25,35 @@ export function logout() {
 }
 
 export async function doLogin(email) {
-  const normalized = String(email || "").trim();
-  if (!normalized) {
-    return { ok: false, message: "Enter an email address." };
-  }
-
-  const result = await apiPost("/auth/login", { email: normalized });
-  if (!result.ok) {
-    return result;
-  }
+  const result = await apiPost("/auth/login", { email: String(email || "").trim() });
+  if (!result.ok) return result;
 
   setSession({ token: result.token, user: result.user });
   return result;
 }
 
-function redirectToRolePage(role) {
-  window.location.href = role === "professor" ? "professor-dashboard.html" : "student-dashboard.html";
-}
+const form = document.getElementById("login-form");
+if (form) {
+  const emailInput = document.getElementById("email");
+  const messageNode = document.getElementById("message") || document.getElementById("notice");
 
-async function handleLogin(event) {
-  if (event) event.preventDefault();
-  const email = emailInput?.value?.trim();
-
-  setMessage(messageNode, "Signing in...", "info");
-  const result = await doLogin(email);
-
-  if (!result.ok) {
-    setMessage(messageNode, result.message || "Login failed.", "error");
-    return;
-  }
-
-  setMessage(messageNode, "Success! Redirecting...", "success");
-  redirectToRolePage(result.user.role);
-}
-
-const isLoginPage = Boolean(loginForm || loginButton);
-if (isLoginPage) {
   const existing = getSession();
   if (existing?.user?.role) {
-    redirectToRolePage(existing.user.role);
+    window.location.href = roleHome(existing.user.role);
   }
 
-  loginForm?.addEventListener("submit", handleLogin);
-  loginButton?.addEventListener("click", handleLogin);
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    setMessage(messageNode, "Signing in...", "info");
+    const result = await doLogin(emailInput.value);
+
+    if (!result.ok) {
+      setMessage(messageNode, result.message || "Login failed.", "error");
+      return;
+    }
+
+    setMessage(messageNode, "Success! Redirecting...", "success");
+    window.location.href = roleHome(result.user.role);
+  });
 }

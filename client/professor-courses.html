@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenSlot | Professor Home</title>
+  <title>OpenSlot | Professor Courses</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -11,9 +11,9 @@
     <header class="top-nav">
       <div class="brand"><span class="brand-icon">📅</span>OpenSlot</div>
       <nav class="nav-links">
-        <a class="active" href="professor-dashboard.html">Dashboard</a>
+        <a href="professor-dashboard.html">Dashboard</a>
         <a href="professor-schedule.html">Schedule</a>
-        <a href="professor-courses.html">Courses</a>
+        <a class="active" href="professor-courses.html">Courses</a>
         <a href="professor-settings.html">Settings</a>
       </nav>
       <div class="nav-tools">
@@ -27,35 +27,22 @@
       <section class="card hero">
         <div class="hero-row">
           <div>
-            <h1 id="hello-title">Hello, Professor</h1>
-            <p class="subhead" id="booked-count">You have 0 sessions booked for today.</p>
+            <h1>My Courses</h1>
+            <p class="subhead" id="course-count">Managing active courses this semester.</p>
           </div>
-          <a class="btn-primary" href="slot-create.html">+ Create Open Slot</a>
+          <button class="btn-primary" type="button">+ Add Course</button>
         </div>
       </section>
 
-      <section class="card">
-        <h2>Upcoming Booked Sessions</h2>
-        <div id="upcoming-sessions" class="list" style="margin-top: 12px;"></div>
-      </section>
-
-      <section class="card">
-        <div class="section-title">
-          <h2>Open Slots Available</h2>
-          <a href="professor-schedule.html">Manage All</a>
-        </div>
-        <div id="open-slots" class="grid grid-3" style="margin-top: 12px;"></div>
-      </section>
-
-      <p id="notice" class="notice"></p>
+      <section id="courses-grid" class="grid grid-2"></section>
     </main>
 
     <footer class="footer">
       <span>© 2026 OpenSlot University Scheduler</span>
-      <span><a href="professor-settings.html">Profile</a> · <a href="support.html">Support</a></span>
+      <span><a href="professor-schedule.html">View Schedule</a></span>
     </footer>
   </div>
 
-  <script type="module" src="js/professor.js"></script>
+  <script type="module" src="js/professor-courses.js"></script>
 </body>
 </html>

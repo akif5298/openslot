@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenSlot | Browse Slots</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand"><span class="brand-icon">📅</span>OpenSlot</div>
+      <div class="search-row" style="width: min(360px, 100%);">
+        <span>🔎</span>
+        <input id="search-input" type="text" placeholder="Search courses or professors" />
+      </div>
+      <nav class="nav-links">
+        <a href="student-dashboard.html">Dashboard</a>
+        <a class="active" href="browse-slots.html">Browse Slots</a>
+        <a href="my-bookings.html">My Bookings</a>
+        <a href="support.html">Support</a>
+      </nav>
+      <div class="nav-tools">
+        <div class="avatar" id="user-avatar">U</div>
+        <button class="btn-ghost" id="logout-btn" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="page side-layout">
+      <aside class="sidebar">
+        <div class="side-menu">
+          <a href="student-dashboard.html">Home</a>
+          <a class="active" href="browse-slots.html">Course Slots</a>
+          <a href="my-bookings.html">My Schedule</a>
+          <a href="support.html">Support</a>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--line); margin: 16px 0;" />
+
+        <div class="grid">
+          <div>
+            <label for="course-filter">All Courses</label>
+            <select id="course-filter"></select>
+          </div>
+          <div>
+            <label for="date-filter">Any Day</label>
+            <input id="date-filter" type="date" />
+          </div>
+          <button id="apply-filters" class="btn-primary" type="button">Apply Filters</button>
+        </div>
+      </aside>
+
+      <section class="grid">
+        <section class="card hero">
+          <h1>Available OpenSlots</h1>
+          <p class="subhead">Find and book a meeting with your professors.</p>
+          <p id="notice" class="notice" style="margin-top: 12px;"></p>
+        </section>
+
+        <section id="slots-grid" class="slot-grid"></section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 OpenSlot University Scheduler</span>
+      <span><a href="support.html">Support</a> · <a href="support.html">Privacy</a> · <a href="support.html">Terms</a></span>
+    </footer>
+  </div>
+
+  <script type="module" src="js/browse-slots.js"></script>
+</body>
+</html>

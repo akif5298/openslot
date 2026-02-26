@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenSlot | Professor Settings</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand"><span class="brand-icon">📅</span>OpenSlot</div>
+      <nav class="nav-links">
+        <a href="professor-dashboard.html">Dashboard</a>
+        <a href="professor-schedule.html">Schedule</a>
+        <a href="professor-courses.html">Courses</a>
+        <a class="active" href="professor-settings.html">Settings</a>
+      </nav>
+      <div class="nav-tools">
+        <button class="tool-btn" title="Notifications">🔔</button>
+        <div class="avatar avatar-blue" id="user-avatar">P</div>
+        <button class="btn-ghost" id="logout-btn" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="page side-layout">
+      <aside class="sidebar">
+        <h3>Account Settings</h3>
+        <div class="side-menu" style="margin-top: 8px;">
+          <button class="active" type="button">Profile</button>
+          <button type="button" disabled>Notification Preferences</button>
+          <button type="button" disabled>Calendar Integration</button>
+          <button type="button" disabled>Security</button>
+        </div>
+      </aside>
+
+      <section class="grid">
+        <section class="card">
+          <h1>Profile Settings</h1>
+          <p class="subhead">Manage your public information and office-hours preferences.</p>
+
+          <form id="settings-form" class="grid" style="margin-top: 12px;">
+            <div class="session-item" style="grid-template-columns: auto 1fr;">
+              <div class="avatar avatar-blue" id="profile-avatar">P</div>
+              <div>
+                <strong>Profile Photo</strong>
+                <p class="subhead" style="margin: 4px 0;">Upload a high-resolution photo for your students.</p>
+                <div class="row" style="display:flex; gap:8px;">
+                  <button type="button" class="btn-ghost" disabled>Change Photo</button>
+                  <button type="button" class="btn-danger" disabled>Remove</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-2">
+              <div>
+                <label for="full-name">Full Name</label>
+                <input id="full-name" required />
+              </div>
+              <div>
+                <label for="email">Email Address</label>
+                <input id="email" type="email" required />
+              </div>
+            </div>
+
+            <div>
+              <label for="office">Office Location</label>
+              <input id="office" />
+            </div>
+
+            <div>
+              <label for="bio">Professional Bio</label>
+              <textarea id="bio"></textarea>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+              <button id="cancel-settings" type="button" class="btn-ghost">Cancel</button>
+              <button type="submit" class="btn-primary">Save Changes</button>
+            </div>
+
+            <p id="notice" class="notice"></p>
+          </form>
+        </section>
+
+        <section class="card card-flat">
+          <strong>Visibility</strong>
+          <p class="subhead" style="margin-top: 8px;">Your profile information and office location are visible to students when they browse your open slots.</p>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 OpenSlot University Scheduler</span>
+      <span><a href="professor-dashboard.html">Dashboard</a></span>
+    </footer>
+  </div>
+
+  <script type="module" src="js/professor-settings.js"></script>
+</body>
+</html>

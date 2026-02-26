@@ -7,44 +7,65 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <main class="page">
-    <section class="shell">
-      <header class="topbar">
-        <div>
-          <h1>Professor Schedule</h1>
-          <p class="subtle">Daily/weekly view with open and booked slots.</p>
-        </div>
-        <nav class="nav-row">
-          <a class="btn btn-link" href="professor-dashboard.html">Back to Dashboard</a>
-          <button class="btn-secondary" data-logout>Logout</button>
-        </nav>
-      </header>
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand"><span class="brand-icon">📅</span>OpenSlot</div>
+      <nav class="nav-links">
+        <a href="professor-dashboard.html">Dashboard</a>
+        <a class="active" href="professor-schedule.html">Schedule</a>
+        <a href="professor-courses.html">Courses</a>
+        <a href="professor-settings.html">Settings</a>
+      </nav>
+      <div class="nav-tools">
+        <button class="tool-btn" title="Notifications">🔔</button>
+        <div class="avatar avatar-blue" id="user-avatar">P</div>
+        <button class="btn-ghost" id="logout-btn" type="button">Logout</button>
+      </div>
+    </header>
 
-      <section class="card">
-        <div class="filter-row" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+    <main class="page side-layout">
+      <aside class="sidebar">
+        <h3>Navigation</h3>
+        <div class="grid" style="margin-top: 10px;">
+          <div>
+            <label for="date">Date</label>
+            <input id="date" type="date" />
+          </div>
           <div>
             <label for="view">View</label>
             <select id="view">
-            <option value="day">Day</option>
               <option value="week">Week</option>
-          </select>
+              <option value="day">Day</option>
+            </select>
+          </div>
+          <button id="refresh" class="btn-primary" type="button">Refresh Schedule</button>
         </div>
-        <div>
-            <label for="date">Date</label>
-            <input id="date" type="date" />
-    </div>
-          <div>
-            <label>&nbsp;</label>
-            <button id="refresh" type="button" class="btn-primary">Refresh</button>
-    </div>
-  </div>
-        <p id="message" class="message message-info"></p>
-        <div id="summary" class="info-grid"></div>
-      </section>
 
-      <section id="schedule" class="grid" style="margin-top: 14px;"></section>
-    </section>
-  </main>
+        <hr style="border:0; border-top:1px solid var(--line); margin:16px 0;" />
+        <div class="section-title">
+          <h3>Draft Slots</h3>
+          <button id="publish-all" class="btn-link" type="button">Publish All</button>
+        </div>
+        <div id="draft-list" class="list" style="margin-top: 10px;"></div>
+        <p id="notice" class="notice" style="margin-top: 12px;"></p>
+      </aside>
+
+      <section class="schedule-shell">
+        <div class="schedule-head">
+          <h2 id="range-label">Week View</h2>
+          <a class="btn-primary" href="slot-create.html">+ Create Slot</a>
+        </div>
+
+        <div class="week-grid" id="week-grid"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 OpenSlot University Scheduler</span>
+      <span><a href="professor-dashboard.html">Dashboard</a></span>
+    </footer>
+  </div>
+
   <script type="module" src="js/professor-schedule.js"></script>
 </body>
 </html>

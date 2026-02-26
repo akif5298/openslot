@@ -1,42 +1,52 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>OpenSlot — My Bookings</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenSlot | My Bookings</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="nav">
-      <div class="brand">OpenSlot</div>
-      <div class="row">
-        <span class="pill" id="who"></span>
-        <button class="btn" id="backBtn">Back</button>
-        <button class="btn danger" id="logoutBtn">Logout</button>
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand"><span class="brand-icon">📅</span>OpenSlot</div>
+      <nav class="nav-links">
+        <a href="student-dashboard.html">Dashboard</a>
+        <a href="browse-slots.html">Browse Slots</a>
+        <a class="active" href="my-bookings.html">My Bookings</a>
+        <a href="support.html">Support</a>
+      </nav>
+      <div class="nav-tools">
+        <button class="tool-btn" title="Search">🔎</button>
+        <div class="avatar" id="user-avatar">U</div>
+        <button class="btn-ghost" id="logout-btn" type="button">Logout</button>
       </div>
-    </div>
+    </header>
 
-    <div id="notice" class="notice"></div>
+    <main class="page">
+      <section class="card hero">
+        <h1>My Bookings</h1>
+        <p class="subhead">Manage and view your upcoming and past office-hour sessions.</p>
+        <p id="notice" class="notice" style="margin-top: 12px;"></p>
+      </section>
 
-    <div class="card">
-      <h2>My bookings</h2>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Course</th>
-            <th>Professor</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th></th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="bookingsBody"></tbody>
-      </table>
-      <p><small>Reschedule: use slot IDs from the Student dashboard list (Milestone 2 UI simplification).</small></p>
-    </div>
+      <section class="card">
+        <h2>Upcoming</h2>
+        <div id="upcoming-list" class="list" style="margin-top: 12px;"></div>
+      </section>
+
+      <section class="card">
+        <h2>Past</h2>
+        <div id="past-list" class="list" style="margin-top: 12px;"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 OpenSlot University Scheduler</span>
+      <span><a href="support.html">Help Center</a> · <a href="support.html">Privacy Policy</a> · <a href="support.html">Terms of Service</a></span>
+    </footer>
   </div>
 
-  <script type="module" src="./js/bookings.js"></script>
+  <script type="module" src="js/bookings.js"></script>
 </body>
 </html>

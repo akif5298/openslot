@@ -39,6 +39,7 @@ export function getProfessorSchedule(req, res) {
       return {
         ...s,
         course_code: course?.course_code ?? "COURSE",
+        course_name: course?.course_name ?? "Course",
         booked: s.booked_by != null
       };
     })

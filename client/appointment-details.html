@@ -3,29 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenSlot | Appointment Details</title>
+  <title>OpenSlot | Session Details</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <main class="page">
-    <section class="shell">
-      <header class="topbar">
-        <div>
-          <h1 id="heading">Appointment Details</h1>
-          <p class="subtle">Review your meeting info before the session starts.</p>
-    </div>
-        <nav class="nav-row">
-          <a class="btn btn-link" href="my-bookings.html">Back to Bookings</a>
-          <button class="btn-secondary" data-logout>Logout</button>
-        </nav>
-      </header>
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand"><span class="brand-icon">🚩</span>OpenSlot</div>
+      <nav class="nav-links">
+        <a href="student-dashboard.html">Dashboard</a>
+        <a href="browse-slots.html">Browse Slots</a>
+        <a class="active" href="my-bookings.html">My Bookings</a>
+        <a href="support.html">Support</a>
+      </nav>
+      <div class="nav-tools">
+        <div class="search-row" style="width: 220px;"><span>🔎</span><input type="text" placeholder="Search sessions" disabled /></div>
+        <div class="avatar" id="user-avatar">U</div>
+        <button class="btn-ghost" id="logout-btn" type="button">Logout</button>
+      </div>
+    </header>
 
-      <section class="card">
-      <div id="details"></div>
-        <p id="message" class="message message-info"></p>
+    <main class="page" style="max-width: 920px; margin-left: auto; margin-right: auto;">
+      <section class="card hero">
+        <p class="subhead" style="margin: 0;">My Bookings › Session Details</p>
+        <h1 id="heading" style="margin-top: 8px;">Session Details</h1>
+        <p id="status-text" class="subhead"></p>
       </section>
-    </section>
-  </main>
+
+      <section class="card" id="session-panel">
+        <div class="card-flat" style="border-radius: 14px; padding: 28px; text-align:center; margin-bottom: 14px; background: linear-gradient(145deg, #177dde, #136abc); color:#fff;">
+          <div style="font-size: 3rem;">📅</div>
+        </div>
+
+        <table class="table-like" id="details-table">
+          <tbody></tbody>
+        </table>
+
+        <div class="card-flat" style="margin-top: 14px;">
+          <strong>Notes</strong>
+          <p id="notes-body" class="subhead" style="margin-top: 8px;"></p>
+        </div>
+      </section>
+
+      <section class="card" style="display:flex; justify-content:flex-end; gap: 10px;">
+        <button class="btn-danger" id="action-cancel" type="button">Cancel Session</button>
+        <button class="btn-primary" id="action-join" type="button">Join Video Link</button>
+      </section>
+
+      <section class="card card-flat">
+        <strong>Automatic Sync</strong>
+        <p class="subhead" style="margin-top: 8px;">This session can be added to your calendar. Reminder support is coming next milestone.</p>
+      </section>
+
+      <p id="notice" class="notice"></p>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 OpenSlot University Scheduler</span>
+      <span><a href="support.html">Support</a></span>
+    </footer>
+  </div>
+
   <script type="module" src="js/appointment-details.js"></script>
 </body>
 </html>

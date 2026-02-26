@@ -3,44 +3,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenSlot | Student Dashboard</title>
+  <title>OpenSlot | Student Home</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <main class="page">
-    <section class="shell">
-      <header class="topbar">
-        <div>
-          <h1>Student Dashboard</h1>
-          <p class="subtle" id="welcome"></p>
-        </div>
-        <nav class="nav-row">
-          <a class="btn btn-link" href="my-bookings.html">My Bookings</a>
-          <button class="btn-secondary" data-logout>Logout</button>
-        </nav>
-      </header>
-
-      <section class="card">
-        <div class="filter-row">
-        <div>
-            <label for="course-filter">Course</label>
-            <select id="course-filter"></select>
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand"><span class="brand-icon">📅</span>OpenSlot</div>
+      <nav class="nav-links">
+        <a class="active" href="student-dashboard.html">Home</a>
+        <a href="browse-slots.html">Browse Slots</a>
+        <a href="my-bookings.html">My Bookings</a>
+        <a href="support.html">Support</a>
+      </nav>
+      <div class="nav-tools">
+        <button class="tool-btn" title="Notifications">🔔</button>
+        <div class="avatar" id="user-avatar">U</div>
+        <button class="btn-ghost" id="logout-btn" type="button">Logout</button>
       </div>
-          <div>
-            <label for="date-filter">Date</label>
-            <input id="date-filter" type="date" />
-    </div>
-          <div>
-            <label>&nbsp;</label>
-            <button id="refresh-button" class="btn-primary" type="button">Refresh Slots</button>
-    </div>
-  </div>
-        <p id="message" class="message message-info"></p>
+    </header>
+
+    <main class="page">
+      <section class="card hero">
+        <h1 id="welcome-title">Welcome back</h1>
+        <p class="subhead">Here is what is happening with your schedule today.</p>
       </section>
 
-      <section id="slots" class="grid" style="margin-top: 14px;"></section>
-    </section>
-  </main>
-  <script type="module" src="js/student.js"></script>
+      <section class="card">
+        <div class="section-title">
+          <h2>Next Upcoming Appointment</h2>
+          <a href="my-bookings.html">View all</a>
+        </div>
+        <div id="next-appointment" style="margin-top: 12px;"></div>
+      </section>
+
+      <section class="card">
+        <h2>Quick Find</h2>
+        <div class="search-row" style="margin-top: 10px;">
+          <span>🔎</span>
+          <input id="quick-search" type="text" placeholder="Search for professors, office hours, or departments..." />
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Recently Visited Courses</h2>
+          <a href="browse-slots.html">View all</a>
+        </div>
+        <div id="recent-courses" class="grid grid-3" style="margin-top: 12px;"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 OpenSlot University Scheduler</span>
+      <span><a href="support.html">Support</a> · <a href="support.html">Privacy</a> · <a href="support.html">Terms</a></span>
+    </footer>
+  </div>
+
+  <script type="module" src="js/student-home.js"></script>
 </body>
 </html>

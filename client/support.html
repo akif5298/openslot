@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenSlot | Student Support</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand"><span class="brand-icon">📅</span>OpenSlot</div>
+      <nav class="nav-links">
+        <a href="student-dashboard.html">Dashboard</a>
+        <a href="browse-slots.html">Browse Slots</a>
+        <a href="my-bookings.html">My Bookings</a>
+        <a class="active" href="support.html">Support</a>
+      </nav>
+      <div class="nav-tools">
+        <button class="tool-btn" title="Notifications">🔔</button>
+        <div class="avatar" id="user-avatar">S</div>
+        <button class="btn-ghost" id="logout-btn" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="page" style="max-width: 900px; margin-left:auto; margin-right:auto;">
+      <section class="card hero" style="text-align:center;">
+        <h1>Student Support</h1>
+        <p class="subhead">How can we help you today?</p>
+        <div class="search-row" style="margin-top:14px;">
+          <span>🔎</span>
+          <input id="faq-search" type="text" placeholder="Search for help articles..." />
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Frequently Asked Questions</h2>
+        <div class="grid" style="margin-top:12px;">
+          <details class="faq-item" open>
+            <summary>How do I cancel or reschedule a booking?</summary>
+            <p>Go to <strong>My Bookings</strong>, open the session card, then choose cancel or reschedule before the slot start time.</p>
+          </details>
+          <details class="faq-item">
+            <summary>How can I sync OpenSlot with Google Calendar?</summary>
+            <p>Calendar integration is planned. For now, use the session details page to copy date/time and link manually.</p>
+          </details>
+          <details class="faq-item">
+            <summary>What should I do if my professor is not showing up?</summary>
+            <p>Use the notes/contact link in your session details and provide appointment ID and time for support follow-up.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Can I book recurring sessions?</summary>
+            <p>Recurring booking is not yet enabled in this milestone. You can book each available slot individually.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="card card-flat" style="text-align:center; padding: 24px;">
+        <div style="font-size: 1.8rem;">🎧</div>
+        <h3 style="margin-top: 8px;">Still need help?</h3>
+        <p class="subhead">Support team is available Monday through Friday, 9 AM to 5 PM.</p>
+        <button id="contact-support" class="btn-primary" type="button">Contact Support</button>
+      </section>
+
+      <p id="notice" class="notice"></p>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 OpenSlot University Scheduling. All rights reserved.</span>
+      <span><a href="support.html">Privacy Policy</a> · <a href="support.html">Terms of Service</a></span>
+    </footer>
+  </div>
+
+  <script type="module" src="js/support.js"></script>
+</body>
+</html>
