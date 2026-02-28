@@ -1,16 +1,15 @@
-# OpenSlot Milestone 02 - Database Design Package
+# OpenSlot ER Diagram
 
-## 1. Scope
-This database design supports the Milestone 02 workflow:
-- role-based users (students and professors)
-- professor-created office hour slots
-- student bookings tied to exactly one slot
-- appointment lifecycle states (booked/cancelled/completed)
+This page is intended for quick GitHub visibility of the database structure used in Milestone 02.
 
-## 2. ER / Relational Diagram
-Simple diagram file:
-- `docs/milestone-02/er-diagram.svg`
+PlantUML source:
 - `docs/milestone-02/er-diagram.puml`
+
+## Diagram Preview
+
+![OpenSlot ER Diagram](docs/milestone-02/er-diagram.svg)
+
+## PlantUML Source
 
 ```plantuml
 @startuml
@@ -75,19 +74,34 @@ USERS o|--o{ SLOTS : "optional booked_by"
 @enduml
 ```
 
-## 3. SQL CREATE TABLE Statements
-The authoritative SQL script is:
-- `db/schema.sql`
+## Core Entities
 
-It includes:
-- primary keys on all core entities
-- foreign key constraints across user/course/slot/appointment relations
-- domain constraints using CHECK clauses (role, mode, visibility, status)
-- uniqueness constraints (`users.email`, `appointments.slot_id`, `courses(course_code, term)`)
-- performance indexes for schedule and bookings queries
+- `USERS`
+  - Stores students and professors
+  - Key fields: `user_id`, `email`, `role`
 
-## 4. Normalization Notes
-- **1NF**: all fields are atomic; no repeating groups in a row.
-- **2NF**: all non-key attributes depend on whole primary keys.
-- **3NF**: non-key attributes do not depend on other non-key attributes.
-- `appointments` separated from `office_hour_slots` avoids duplicating student booking metadata and supports appointment status tracking cleanly.
+- `COURSES`
+  - Stores courses used to organize office-hour availability
+  - Key fields: `course_id`, `course_code`, `course_name`, `term`
+
+- `OFFICE_HOUR_SLOTS`
+  - Stores professor-created availability slots
+  - Key fields: `slot_id`, `professor_id`, `course_id`, `start_time`, `end_time`, `status`
+
+- `APPOINTMENTS`
+  - Stores student bookings for slots
+  - Key fields: `appointment_id`, `slot_id`, `student_id`, `status`
+
+## Relationship Summary
+
+- One professor can create many office-hour slots.
+- One course can have many office-hour slots.
+- One office-hour slot can have zero or one appointment.
+- One student can own many appointments.
+
+## Source Files
+
+- PlantUML source: `docs/milestone-02/er-diagram.puml`
+- Diagram asset: `docs/milestone-02/er-diagram.svg`
+- Database notes: `docs/milestone-02/database-design.md`
+- SQL schema: `db/schema.sql`

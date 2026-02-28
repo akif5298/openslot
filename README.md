@@ -11,6 +11,10 @@ Team:
 - Dharmik Patel
 - Akif Rahman
 
+Quick links:
+- [ER Diagram](ER-DIAGRAM.md)
+- [Database Design Package](docs/milestone-02/database-design.md)
+
 ## Milestone 02 Deliverables Mapping
 
 | Required Deliverable | Implemented In Repo |

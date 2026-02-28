@@ -1,18 +1,3 @@
-# OpenSlot Milestone 02 - Database Design Package
-
-## 1. Scope
-This database design supports the Milestone 02 workflow:
-- role-based users (students and professors)
-- professor-created office hour slots
-- student bookings tied to exactly one slot
-- appointment lifecycle states (booked/cancelled/completed)
-
-## 2. ER / Relational Diagram
-Simple diagram file:
-- `docs/milestone-02/er-diagram.svg`
-- `docs/milestone-02/er-diagram.puml`
-
-```plantuml
 @startuml
 hide circle
 skinparam backgroundColor #F4F8FB
@@ -72,22 +57,5 @@ COURSES ||--o{ SLOTS : "categorizes (course_id)"
 USERS ||--o{ APPOINTMENTS : "owns (student_id)"
 SLOTS ||--o| APPOINTMENTS : "is booked by"
 USERS o|--o{ SLOTS : "optional booked_by"
+
 @enduml
-```
-
-## 3. SQL CREATE TABLE Statements
-The authoritative SQL script is:
-- `db/schema.sql`
-
-It includes:
-- primary keys on all core entities
-- foreign key constraints across user/course/slot/appointment relations
-- domain constraints using CHECK clauses (role, mode, visibility, status)
-- uniqueness constraints (`users.email`, `appointments.slot_id`, `courses(course_code, term)`)
-- performance indexes for schedule and bookings queries
-
-## 4. Normalization Notes
-- **1NF**: all fields are atomic; no repeating groups in a row.
-- **2NF**: all non-key attributes depend on whole primary keys.
-- **3NF**: non-key attributes do not depend on other non-key attributes.
-- `appointments` separated from `office_hour_slots` avoids duplicating student booking metadata and supports appointment status tracking cleanly.
