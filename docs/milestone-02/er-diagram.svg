@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <style>
+      .title { font: 700 28px 'Segoe UI', Arial, sans-serif; fill: #163047; }
+      .box-title { font: 700 18px 'Segoe UI', Arial, sans-serif; fill: #163047; }
+      .field { font: 14px 'Courier New', monospace; fill: #244861; }
+      .label { font: 600 13px 'Segoe UI', Arial, sans-serif; fill: #355b78; }
+      .table { fill: #ffffff; stroke: #2f698c; stroke-width: 2.5; rx: 14; ry: 14; }
+      .head { fill: #d8edf8; stroke: #2f698c; stroke-width: 2.5; rx: 14; ry: 14; }
+      .line { stroke: #487d9f; stroke-width: 3; fill: none; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#487d9f"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="760" fill="#f4f8fb"/>
+  <text x="60" y="58" class="title">OpenSlot ER Diagram</text>
+
+  <!-- USERS -->
+  <rect x="70" y="110" width="300" height="210" class="table"/>
+  <rect x="70" y="110" width="300" height="48" class="head"/>
+  <text x="95" y="141" class="box-title">USERS</text>
+  <text x="92" y="185" class="field">PK  user_id</text>
+  <text x="92" y="212" class="field">    name</text>
+  <text x="92" y="239" class="field">UQ  email</text>
+  <text x="92" y="266" class="field">    role</text>
+  <text x="92" y="293" class="field">    created_at</text>
+
+  <!-- COURSES -->
+  <rect x="70" y="430" width="300" height="180" class="table"/>
+  <rect x="70" y="430" width="300" height="48" class="head"/>
+  <text x="95" y="461" class="box-title">COURSES</text>
+  <text x="92" y="505" class="field">PK  course_id</text>
+  <text x="92" y="532" class="field">    course_code</text>
+  <text x="92" y="559" class="field">    course_name</text>
+  <text x="92" y="586" class="field">    term</text>
+
+  <!-- OFFICE HOUR SLOTS -->
+  <rect x="460" y="120" width="340" height="340" class="table"/>
+  <rect x="460" y="120" width="340" height="48" class="head"/>
+  <text x="485" y="151" class="box-title">OFFICE_HOUR_SLOTS</text>
+  <text x="482" y="195" class="field">PK  slot_id</text>
+  <text x="482" y="222" class="field">FK  professor_id → USERS.user_id</text>
+  <text x="482" y="249" class="field">FK  course_id → COURSES.course_id</text>
+  <text x="482" y="276" class="field">    start_time</text>
+  <text x="482" y="303" class="field">    end_time</text>
+  <text x="482" y="330" class="field">    mode</text>
+  <text x="482" y="357" class="field">    location_or_link</text>
+  <text x="482" y="384" class="field">    visibility</text>
+  <text x="482" y="411" class="field">    status</text>
+  <text x="482" y="438" class="field">FK? booked_by → USERS.user_id</text>
+
+  <!-- APPOINTMENTS -->
+  <rect x="865" y="220" width="270" height="220" class="table"/>
+  <rect x="865" y="220" width="270" height="48" class="head"/>
+  <text x="890" y="251" class="box-title">APPOINTMENTS</text>
+  <text x="887" y="295" class="field">PK  appointment_id</text>
+  <text x="887" y="322" class="field">FK  slot_id (UNIQUE)</text>
+  <text x="887" y="349" class="field">FK  student_id</text>
+  <text x="887" y="376" class="field">    status</text>
+  <text x="887" y="403" class="field">    created_at</text>
+
+  <!-- Relationships -->
+  <path d="M370 215 L460 215" class="line" marker-end="url(#arrow)"/>
+  <text x="390" y="196" class="label">1 professor creates many slots</text>
+
+  <path d="M370 520 C430 520, 430 350, 460 350" class="line" marker-end="url(#arrow)"/>
+  <text x="305" y="392" class="label">1 course has many slots</text>
+
+  <path d="M800 290 L865 290" class="line" marker-end="url(#arrow)"/>
+  <text x="812" y="271" class="label">1 slot → 0..1 appointment</text>
+
+  <path d="M330 150 C390 150, 390 615, 980 615 C1115 615, 1115 440, 1000 440" class="line" marker-end="url(#arrow)"/>
+  <text x="618" y="638" class="label">1 student owns many appointments</text>
+</svg>

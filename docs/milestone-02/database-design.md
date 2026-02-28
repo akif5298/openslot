@@ -8,6 +8,9 @@ This database design supports the Milestone 02 workflow:
 - appointment lifecycle states (booked/cancelled/completed)
 
 ## 2. ER / Relational Diagram
+Simple diagram file:
+- `docs/milestone-02/er-diagram.svg`
+
 ```mermaid
 erDiagram
     USERS ||--o{ OFFICE_HOUR_SLOTS : "creates (professor_id)"

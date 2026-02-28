@@ -17,7 +17,7 @@ Team:
 |---|---|
 | Working front-end + core screens + primary workflow | `client/*.html`, `client/js/*.js`, `client/css/styles.css` |
 | Database package PDF (diagram + SQL) | `docs/milestone-02/database-design-package.pdf` |
-| Database design source files | `docs/milestone-02/database-design.md`, `docs/milestone-02/database-design-package.txt`, `db/schema.sql` |
+| Database design source files | `docs/milestone-02/database-design.md`, `docs/milestone-02/database-design-package.txt`, `docs/milestone-02/er-diagram.svg`, `db/schema.sql` |
 | Back-end runnable setup + route/controller structure | `server/src/app.js`, `server/src/routes/*.js`, `server/src/controllers/*.js` |
 | Kanban tracking evidence | `docs/milestone-02/kanban-evidence.md` |
 | Activity blog/wiki updates (2+ entries) | `docs/milestone-02/activity-blog.md` |
