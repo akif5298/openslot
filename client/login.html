@@ -3,41 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpenSlot | Sign In</title>
+  <title>OpenSlot | Login</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <header class="top-nav">
-      <div class="brand"><span class="brand-icon">📅</span>OpenSlot</div>
-      <div class="nav-tools"><span class="subhead">University Scheduling Platform</span></div>
-    </header>
-
-    <main class="page" style="max-width: 560px; margin: 24px auto;">
-      <section class="card hero">
-        <h1>Welcome Back</h1>
-        <p class="subhead">Sign in with a demo account to access student or professor experience.</p>
-
-        <form id="login-form" class="grid" style="margin-top: 12px;">
-          <div>
-            <label for="email">Email</label>
-            <input id="email" type="email" placeholder="student@demo.com" list="demo-users" required />
-            <datalist id="demo-users">
-              <option value="student@demo.com"></option>
-              <option value="student2@demo.com"></option>
-              <option value="prof@demo.com"></option>
-              <option value="prof2@demo.com"></option>
-              <option value="prof3@demo.com"></option>
-            </datalist>
-          </div>
-
-          <button type="submit" class="btn-primary">Sign In</button>
-          <p id="message" class="message message-info"></p>
-        </form>
-      </section>
-    </main>
+  <main class="center-wrap">
+    <section class="card auth-card">
+      <h1>OpenSlot</h1>
+      <p class="subtle">Office-hour booking prototype (Milestone 1)</p>
+      <hr />
+      <form id="login-form" novalidate>
+        <label for="email">Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="student@demo.com or prof@demo.com"
+          required
+          list="demo-users"
+        />
+        <datalist id="demo-users">
+          <option value="student@demo.com"></option>
+          <option value="student2@demo.com"></option>
+          <option value="prof@demo.com"></option>
+          <option value="prof2@demo.com"></option>
+        </datalist>
+        <div class="inline-actions" style="margin-top: 12px;">
+          <button class="btn-primary" type="submit">Sign In</button>
   </div>
-
+        <p id="message" class="message message-info"></p>
+      </form>
+    </section>
+  </main>
   <script type="module" src="js/auth.js"></script>
 </body>
 </html>
+
+
