@@ -1,7 +1,7 @@
 # OpenSlot — Testing Summary Report
 
 **Project:** OpenSlot — Academic Office Hours Scheduling  
-**Milestone:** 2  
+**Milestone:** 3
 **Date:** April 5, 2026  
 **Prepared by:** OpenSlot Team  
 
