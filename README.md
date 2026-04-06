@@ -20,6 +20,7 @@ Quick links:
 - [Milestone 03 Testing Summary](docs/milestone-03/testing-summary-report.md)
 - [Milestone 03 Demo Outline](docs/milestone-03/final-demo-outline.md)
 - [Milestone 03 Presentation One-Pager](docs/milestone-03/presentation-one-pager.md)
+- [Milestone 03 Visual Overview](docs/milestone-03/visual-overview.html)
 - [Milestone 03 Submission Checklist](docs/milestone-03/submission-checklist.md)
 
 ## Milestone 03 Deliverables Mapping
