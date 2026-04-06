@@ -60,41 +60,56 @@ Professor flow:
 - Back-end: Node.js, Express
 - Database: SQLite using the built-in Node `node:sqlite` module
 
-## Run Locally
+## Deployment / Execution Instructions
 
-### 1. Install server dependencies
+These instructions are intended for a clean machine setup.
+
+### Prerequisites
+
+- Node.js 23 or newer
+- npm 10 or newer
+- A modern browser such as Chrome, Edge, Firefox, or Safari
+
+No separate database server is required because the project uses a local SQLite database file.
+
+### 1. Clone or download the project
+
+Open a terminal and move into the project folder:
+
+```bash
+cd openslot
+```
+
+### 2. Install server dependencies
 
 ```bash
 cd server
 npm install
 ```
 
-### 2. Start the API
+### 3. Start the application server
 
 ```bash
 npm run start
 ```
 
-API base URL:
+This starts:
+- the Express API
+- the static front-end pages
+- the SQLite-backed application logic
+
+Application URLs:
 
 ```text
-http://localhost:3001/api
+Frontend: http://localhost:3001
+API:      http://localhost:3001/api
+Health:   http://localhost:3001/health
 ```
 
-Database notes:
-- The app creates `db/openslot.sqlite` automatically on first run.
-- Demo seed data is inserted automatically when the database is empty.
-- To start from a clean database, run with `OPENSLOT_RESET_DB=1`.
+### 4. Open the front-end
 
-### 3. Open the front-end
+Open `http://localhost:3001` in your browser.
 
-Open:
-
-```text
-http://localhost:3001
-```
-
-Important:
 - Do not open `client/login.html` using a `file:///...` URL in the browser.
 - Use the server URL above so the browser loads the app over HTTP.
 
@@ -105,7 +120,7 @@ Demo logins:
 - `prof2@demo.com`
 - `prof3@demo.com`
 
-### 4. Run the automated smoke test
+### 5. Run the automated smoke test
 
 ```bash
 cd server
@@ -119,6 +134,23 @@ This verification script:
 - creates professor slots
 - books, reschedules, and cancels an appointment
 - updates a professor profile
+
+## Environment / Configuration Notes
+
+- Default application port: `3001`
+- Default database path: `db/openslot.sqlite`
+- The SQLite database file is created automatically on first run.
+- Demo seed data is inserted automatically when the database is empty.
+- No `.env` file is required for the default local setup.
+
+Optional environment variables:
+
+- `PORT`
+  Starts the server on a different port.
+- `OPENSLOT_DB_PATH`
+  Uses a different SQLite database file location.
+- `OPENSLOT_RESET_DB=1`
+  Deletes the current SQLite database file before startup and recreates it with seed data.
 
 ## Database Summary
 
