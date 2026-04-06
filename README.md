@@ -87,7 +87,15 @@ Database notes:
 
 ### 3. Open the front-end
 
-Open `client/login.html` in a browser.
+Open:
+
+```text
+http://localhost:3001
+```
+
+Important:
+- Do not open `client/login.html` using a `file:///...` URL in the browser.
+- Use the server URL above so the browser loads the app over HTTP.
 
 Demo logins:
 - `student@demo.com`

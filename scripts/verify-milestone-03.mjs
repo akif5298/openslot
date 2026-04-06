@@ -139,7 +139,31 @@ try {
   const slotOneId = createdSlotOne.payload.slot.slot_id;
   const slotTwoId = createdSlotTwo.payload.slot.slot_id;
 
-  console.log("4. Booking an appointment as a student");
+  console.log("4. Verifying overlapping slot validation");
+  const overlappingSlot = await request(apiBase, "POST", "/slots", {
+    token: professorToken,
+    body: {
+      professor_id: professor.user_id,
+      course_id: 301,
+      start_time: createLocalSlot(7, 10, 15).start,
+      end_time: createLocalSlot(7, 10, 45).end,
+      mode: "in_person",
+      location_or_link: "Office 402",
+      visibility: "public",
+      status: "posted",
+      topic: "Overlap Validation"
+    }
+  });
+  assert.equal(overlappingSlot.status, 409);
+
+  console.log("5. Verifying browse-slots listing for students");
+  const browseSlots = await request(apiBase, "GET", "/slots", {
+    token: studentToken
+  });
+  assert.equal(browseSlots.status, 200);
+  assert.ok(browseSlots.payload.slots.some(slot => slot.slot_id === slotOneId));
+
+  console.log("6. Booking an appointment as a student");
   const booking = await request(apiBase, "POST", "/appointments", {
     token: studentToken,
     body: {
@@ -153,7 +177,7 @@ try {
   assert.equal(booking.payload.appointment.student_id, student.user_id);
   const appointmentId = booking.payload.appointment.appointment_id;
 
-  console.log("5. Fetching My Bookings and appointment details");
+  console.log("7. Fetching My Bookings and appointment details");
   const bookings = await request(apiBase, "GET", `/appointments/mine/${student.user_id}`, {
     token: studentToken
   });
@@ -166,7 +190,7 @@ try {
   assert.ok(bookings.payload.bookings.some(item => item.appointment_id === appointmentId));
   assert.equal(details.payload.slot.slot_id, slotOneId);
 
-  console.log("6. Rescheduling to a second slot");
+  console.log("8. Rescheduling to a second slot");
   const reschedule = await request(apiBase, "PATCH", `/appointments/${appointmentId}/reschedule`, {
     token: studentToken,
     body: { new_slot_id: slotTwoId }
@@ -174,7 +198,7 @@ try {
   assert.equal(reschedule.status, 200);
   assert.equal(reschedule.payload.new_slot.slot_id, slotTwoId);
 
-  console.log("7. Cancelling the rescheduled appointment");
+  console.log("9. Cancelling the rescheduled appointment");
   const cancel = await request(apiBase, "PATCH", `/appointments/${appointmentId}/cancel`, {
     token: studentToken,
     body: {}
@@ -182,7 +206,7 @@ try {
   assert.equal(cancel.status, 200);
   assert.equal(cancel.payload.appointment.status, "cancelled");
 
-  console.log("8. Updating professor profile");
+  console.log("10. Updating professor profile");
   const profileUpdate = await request(apiBase, "PATCH", `/auth/profile/${professor.user_id}`, {
     token: professorToken,
     body: {
@@ -195,7 +219,7 @@ try {
   assert.equal(profileUpdate.status, 200);
   assert.equal(profileUpdate.payload.user.office_location, "Updated Office 402B");
 
-  console.log("9. Verifying schedule endpoint");
+  console.log("11. Verifying schedule endpoint");
   const schedule = await request(
     apiBase,
     "GET",
