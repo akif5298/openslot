@@ -1,153 +1,241 @@
-# OpenSlot Milestone 03 Testing Summary Report
+# OpenSlot — Testing Summary Report
 
-Course: CP476 Internet Computing  
-Project: OpenSlot  
-Milestone: 03  
-Report Date: April 5, 2026
+**Project:** OpenSlot — Academic Office Hours Scheduling  
+**Milestone:** 2  
+**Date:** April 5, 2026  
+**Prepared by:** OpenSlot Team  
+
+---
 
 ## 1. Overview
 
-This report summarizes the testing completed for the final Milestone 03 release of OpenSlot. The goal of testing was to confirm that the application works end-to-end across the three required layers:
+OpenSlot is a full-stack web application that allows professors to create office-hour slots and students to browse and book appointments. The backend is a Node.js/Express REST API using in-memory demo data. This report documents the automated test suite written for Milestone 2.
 
-- front-end user workflow
-- server-side processing
-- relational database persistence
+**Test framework:** [Vitest](https://vitest.dev/) (Jest-compatible, native ESM support)  
+**HTTP testing:** [Supertest](https://github.com/ladjs/supertest)  
+**Total test cases:** 68  
+**Result:** 68 / 68 passed
 
-The testing focused on the core scenarios required by the project rubric:
+---
 
-- authentication and role-based access
-- professor slot creation and management
-- student browsing and booking
-- appointment detail retrieval
-- rescheduling and cancellation
-- profile updates
-- validation and basic security hygiene
+## 2. Test Plan
 
-## 2. Test Environment
+### 2.1 Features Under Test
 
-- Front-end: static HTML, CSS, and JavaScript pages in `client/`
-- Back-end: Node.js + Express in `server/`
-- Database: SQLite initialized from `db/schema.sql`
-- Test data: seeded demo accounts, courses, slots, and appointments
-- Automated test script: `scripts/verify-milestone-03.mjs`
-- Execution date of latest automated run: April 5, 2026
+| Feature Area | Endpoints Covered | # Test Cases |
+|---|---|---|
+| Authentication | Login, Logout, Update Profile | 11 |
+| Courses | List Courses | 4 |
+| Slots | List, Get by ID, Create, Update Status | 21 |
+| Appointments | Book, List, Details, Cancel, Reschedule | 25 |
+| Schedule | Professor Schedule (day/week) | 7 |
+| **Total** | | **68** |
 
-## 3. Test Strategy
+### 2.2 Test Case Inventory
 
-Two testing approaches were used:
+#### Auth (`src/tests/auth.test.js`)
 
-### 3.1 Functional end-to-end verification
+| ID | Description | Type |
+|---|---|---|
+| TC-AUTH-01 | Login with valid student email → 200, role: student | Happy path |
+| TC-AUTH-02 | Login with valid professor email → 200, role: professor | Happy path |
+| TC-AUTH-03 | Login with unknown email → 401 | Error handling |
+| TC-AUTH-04 | Login with missing email → 401 | Validation |
+| TC-AUTH-05 | Email matching is case-insensitive | Edge case |
+| TC-AUTH-06 | Logout always returns ok: true | Happy path |
+| TC-AUTH-07 | Update profile with valid fields → 200, updated user | Happy path |
+| TC-AUTH-08 | Update profile with non-existent userId → 404 | Error handling |
+| TC-AUTH-09 | Update profile with invalid userId (string) → 400 | Validation |
+| TC-AUTH-10 | Update profile with blank name → 400 | Validation |
+| TC-AUTH-11 | Update profile with already-taken email → 409 | Business rule |
 
-The main workflow was tested from login through booking management to ensure that the application behaves correctly as a complete system rather than as isolated pages.
+#### Courses (`src/tests/courses.test.js`)
 
-### 3.2 Automated smoke testing
+| ID | Description | Type |
+|---|---|---|
+| TC-CRS-01 | GET /api/courses returns ok: true with array | Happy path |
+| TC-CRS-02 | Returns exactly 5 demo courses | Data integrity |
+| TC-CRS-03 | Each course has required fields | Schema |
+| TC-CRS-04 | Expected course codes present (CS302, AI101, MATH202) | Data integrity |
 
-An automated script was added to quickly validate the most important Milestone 03 features after code changes. The smoke test starts the API on a temporary SQLite database, runs a sequence of real HTTP requests, checks the responses, and confirms that data is saved and updated correctly.
+#### Slots (`src/tests/slots.test.js`)
 
-## 4. Test Plan
+| ID | Description | Type |
+|---|---|---|
+| TC-SLT-01 | GET /api/slots returns ok: true with slots array | Happy path |
+| TC-SLT-02 | Default response only includes public, posted, unbooked slots | Business rule |
+| TC-SLT-03 | includeBooked=true includes booked slots | Filtering |
+| TC-SLT-04 | Filter by courseId returns only matching slots | Filtering |
+| TC-SLT-05 | Filter by professorId returns only matching slots | Filtering |
+| TC-SLT-06 | status=draft returns only draft slots | Filtering |
+| TC-SLT-07 | Enriched slots include professor_name and course_code | Data enrichment |
+| TC-SLT-08 | Slots sorted by start_time ascending | Ordering |
+| TC-SLT-09 | GET /api/slots/:id returns single slot by valid id | Happy path |
+| TC-SLT-10 | GET /api/slots/99999 → 404 | Error handling |
+| TC-SLT-11 | Returned slot includes enriched fields | Data enrichment |
+| TC-SLT-12 | POST /api/slots creates slot with all required fields → 201 | Happy path |
+| TC-SLT-13 | New slot defaults to draft when status not provided | Defaults |
+| TC-SLT-14 | Create slot missing professor_id → 400 | Validation |
+| TC-SLT-15 | Create slot missing start_time → 400 | Validation |
+| TC-SLT-16 | Create slot missing location_or_link → 400 | Validation |
+| TC-SLT-17 | PATCH status: draft slot → posted → 200 | Happy path |
+| TC-SLT-18 | PATCH status: slot → cancelled → 200 | Happy path |
+| TC-SLT-19 | Cancelling a booked slot clears booked_by (cascade) | Business rule |
+| TC-SLT-20 | PATCH status with invalid value (e.g. "deleted") → 400 | Validation |
+| TC-SLT-21 | PATCH status on non-existent slot → 404 | Error handling |
 
-| ID | Feature | Test Case | Expected Result |
-|---|---|---|---|
-| T01 | Authentication | Login with valid demo student email | Student session is created successfully |
-| T02 | Authentication | Login with valid demo professor email | Professor session is created successfully |
-| T03 | Authorization | Student attempts to create a professor slot | Request is rejected with `403` |
-| T04 | Slot creation | Professor creates future office-hour slots with valid data | Slots are saved to the database and returned by the API |
-| T05 | Validation | Professor tries to create an overlapping slot | Request is rejected with a conflict response |
-| T06 | Browse slots | Student requests the available slots list | Public posted slots are returned correctly |
-| T07 | Booking | Student books a public posted slot | Appointment is created and slot becomes booked |
-| T08 | Appointment details | Student opens My Bookings and Session Details | Appointment and slot information load correctly |
-| T09 | Reschedule | Student reschedules to a different future slot | Old slot becomes available and new slot becomes booked |
-| T10 | Cancel | Student cancels an upcoming appointment | Appointment becomes cancelled and slot becomes available |
-| T11 | Profile update | Professor updates office location and bio | Profile changes are saved and returned by the API |
-| T12 | Schedule view | Professor requests week schedule | Schedule endpoint returns correct slot data for that professor |
+#### Appointments (`src/tests/appointments.test.js`)
 
-## 5. Test Results
+| ID | Description | Type |
+|---|---|---|
+| TC-APT-01 | Book an available public slot → 201, notifications returned | Happy path |
+| TC-APT-02 | Double-booking the same slot → 409 "already booked" | Business rule |
+| TC-APT-03 | Book with missing slot_id → 400 | Validation |
+| TC-APT-04 | Book with non-existent student → 404 | Validation |
+| TC-APT-05 | Book with non-existent slot → 404 | Validation |
+| TC-APT-06 | Book a draft (non-posted) slot → 409 "not posted" | Business rule |
+| TC-APT-07 | GET /mine/:studentId returns all student bookings | Happy path |
+| TC-APT-08 | Each booking includes enriched slot data | Data enrichment |
+| TC-APT-09 | GET /mine/abc (invalid id) → 400 | Validation |
+| TC-APT-10 | Student with one booking returns at least one result | Happy path |
+| TC-APT-11 | Past appointment status auto-computed as "completed" | Business rule |
+| TC-APT-12 | GET /api/appointments/:id returns details + slot + student | Happy path |
+| TC-APT-13 | Student details (name, email) included in response | Data integrity |
+| TC-APT-14 | GET /api/appointments/99999 → 404 | Error handling |
+| TC-APT-15 | GET /api/appointments/abc → 400 | Validation |
+| TC-APT-16 | Cancel a booked future appointment → 200, slot freed | Happy path |
+| TC-APT-17 | Cancel an already-cancelled appointment → 409 | Business rule |
+| TC-APT-18 | Cancel a past appointment → 409 "session has started" | Business rule |
+| TC-APT-19 | Cancel non-existent appointment → 404 | Error handling |
+| TC-APT-20 | Reschedule to a new available slot → 200, old slot freed | Happy path |
+| TC-APT-21 | Reschedule to the same slot → 400 "different slot" | Business rule |
+| TC-APT-22 | Reschedule to an already-booked slot → 409 | Business rule |
+| TC-APT-23 | Reschedule with missing new_slot_id → 400 | Validation |
+| TC-APT-24 | Reschedule to non-existent slot → 404 | Error handling |
+| TC-APT-25 | Reschedule a cancelled appointment → 409 | Business rule |
 
-The latest automated run completed successfully. All primary tests in the smoke-test scope passed.
+#### Schedule (`src/tests/schedule.test.js`)
 
-### 5.1 Results Table
+| ID | Description | Type |
+|---|---|---|
+| TC-SCH-01 | GET /schedule/professor/:id returns ok: true and slots array | Happy path |
+| TC-SCH-02 | Week view returns slots within the 7-day range window | Range logic |
+| TC-SCH-03 | Day view returns view: "day" | Happy path |
+| TC-SCH-04 | Slot objects include course_code and booked flag | Data enrichment |
+| TC-SCH-05 | Only returns slots belonging to the requested professor | Filtering |
+| TC-SCH-06 | Invalid date format → 400 "invalid date" | Validation |
+| TC-SCH-07 | Professor with no slots in range returns empty array | Edge case |
 
-| ID | Status | Method | Notes |
-|---|---|---|---|
-| T01 | Pass | Automated | Student login using `student@demo.com` returned a valid token and user object. |
-| T02 | Pass | Automated | Professor login using `prof@demo.com` returned a valid token and user object. |
-| T03 | Pass | Automated | Student role was correctly blocked from professor-only slot creation with `403 Forbidden`. |
-| T04 | Pass | Automated | Two valid future slots were created successfully and stored in the SQLite database. |
-| T05 | Pass | Automated | Overlapping slot creation attempt returned `409 Conflict`, confirming schedule validation. |
-| T06 | Pass | Automated | Student browse request returned available slots, including newly created public slots. |
-| T07 | Pass | Automated | Booking request created a new appointment and marked the selected slot as booked. |
-| T08 | Pass | Automated | My Bookings and appointment detail endpoints returned the correct appointment and slot data. |
-| T09 | Pass | Automated | Reschedule request moved the appointment to a new slot and released the original slot. |
-| T10 | Pass | Automated | Cancel request changed the appointment status to `cancelled` and cleared the slot booking. |
-| T11 | Pass | Automated | Professor profile update saved new office location and bio fields successfully. |
-| T12 | Pass | Automated | Professor schedule endpoint returned slot data for the selected date range. |
+---
 
-### 5.2 Summary of Results
+## 3. Results
 
-- All core Milestone 03 workflows in the automated smoke-test scope passed.
-- Database-backed persistence is working correctly.
-- Authorization checks are working for the main student/professor role boundaries.
-- Server-side validation correctly rejects overlapping slots and unauthorized actions.
-- No blocking defects were found in the tested end-to-end workflow.
+All tests were executed on **April 5, 2026** using `npm test` from the `/server` directory.
 
-## 6. Automated Tests
-
-The project includes an automated smoke test script for Milestone 03.
-
-### 6.1 How to run the automated test
-
-From the project:
-
-```bash
-cd server
-npm install
-npm run verify
+```
+Test Files   5 passed (5)
+Tests        68 passed (68)
+Duration     3.26s
 ```
 
-### 6.2 What the automated test does
+### Results by Feature
 
-The script:
+| Feature | Tests | Passed | Failed | Pass Rate |
+|---|---|---|---|---|
+| Authentication | 11 | 11 | 0 | 100% |
+| Courses | 4 | 4 | 0 | 100% |
+| Slots | 21 | 21 | 0 | 100% |
+| Appointments | 25 | 25 | 0 | 100% |
+| Schedule | 7 | 7 | 0 | 100% |
+| **Total** | **68** | **68** | **0** | **100%** |
 
-- starts the Express server on a temporary port
-- creates and uses a temporary SQLite database
-- logs in as both student and professor
-- verifies role protection on professor-only actions
-- creates valid professor slots
-- verifies overlap validation
-- checks the student browse-slots endpoint
-- books a slot
-- fetches bookings and appointment details
-- reschedules the appointment
-- cancels the appointment
-- updates professor profile information
-- verifies the professor schedule endpoint
+All 68 test cases passed with no failures or errors.
 
-### 6.3 Latest automated run
+---
 
-Latest confirmed run:
+## 4. How to Run the Automated Tests
 
-- Date: April 5, 2026
-- Result: Pass
+### Prerequisites
 
-## 7. Known Issues / Limitations
+- Node.js 18+ installed
+- Dependencies installed
 
-The tested build is functional for Milestone 03, but a few limitations remain:
+### Setup
 
-- Authentication is demo-token based and does not use passwords or hashed credentials.
-- Notification delivery is simulated through API responses and is not connected to email or SMS services.
-- Calendar sync is not implemented as a live external integration.
-- The client uses static HTML pages rather than a larger front-end framework, which keeps the project simple but limits scalability.
+```bash
+# From the project root
+cd server
+npm install
+```
 
-These limitations do not prevent the required Milestone 03 workflow from working locally.
+### Run Tests
 
-## 8. Conclusion
+```bash
+# Run all tests once (CI mode)
+npm test
 
-Based on the completed testing, OpenSlot satisfies the main Milestone 03 expectations for a full-stack web application:
+# Run in watch mode (re-runs on file save)
+npm run test:watch
+```
 
-- the application supports an end-to-end workflow
-- the workflow is backed by a relational database
-- CRUD-related actions are implemented for the main scheduling data
-- server-side validation and basic security checks are present
-- automated testing support is included
+### Expected Output
 
-Overall, the final system is ready for Milestone 03 submission, with the remaining gaps being enhancement-level limitations rather than blocking functional defects.
+```
+✓ src/tests/courses.test.js      (4 tests)
+✓ src/tests/schedule.test.js     (7 tests)
+✓ src/tests/slots.test.js        (21 tests)
+✓ src/tests/auth.test.js         (11 tests)
+✓ src/tests/appointments.test.js (25 tests)
+
+Test Files  5 passed (5)
+Tests       68 passed (68)
+```
+
+### Test File Locations
+
+| File | Coverage |
+|---|---|
+| `server/src/tests/auth.test.js` | Login, logout, profile update |
+| `server/src/tests/courses.test.js` | Course listing |
+| `server/src/tests/slots.test.js` | Slot CRUD and filtering |
+| `server/src/tests/appointments.test.js` | Booking lifecycle |
+| `server/src/tests/schedule.test.js` | Professor schedule view |
+
+---
+
+## 5. Known Issues and Limitations
+
+### 5.1 In-Memory Data (No Persistence)
+The server uses in-memory demo arrays (`DEMO_SLOTS`, `DEMO_APPOINTMENTS`, etc.) instead of a real database. All state is lost on server restart. Tests are isolated per file by Vitest's worker threads, so tests do not interfere with each other across files.
+
+### 5.2 No Authentication Middleware
+API endpoints do not enforce token validation. Any client can call any endpoint without a valid token. The `demo-token-{userId}` tokens are returned at login but never verified on subsequent requests. Authentication enforcement is deferred to a future milestone.
+
+### 5.3 Past-Slot Booking Not Fully Blocked at the API Level for Pre-seeded Data
+The booking endpoint correctly blocks booking a slot that has already started. However, the demo data includes pre-seeded appointments on past slots (e.g., appointment 5003 on slot 1307) that would not be creatable through the API. These exist only to demonstrate the "completed" status computation.
+
+### 5.4 No Frontend Automated Tests
+The client-side (`/client`) HTML/JavaScript pages are not covered by automated tests. Testing of the frontend was performed manually through browser interaction.
+
+### 5.5 No Input Sanitisation Beyond Trimming
+The API trims string inputs but does not enforce length limits or deeper validation (e.g., maximum bio length, valid datetime format for slot start/end). Malformed datetime strings will be stored as-is.
+
+---
+
+## 6. Manual Testing Performed
+
+In addition to the automated test suite, the following flows were verified manually in the browser:
+
+| Flow | Result |
+|---|---|
+| Student login and redirect to dashboard | Pass |
+| Browse and filter available slots by course | Pass |
+| Book a slot and see confirmation | Pass |
+| View "My Bookings" and appointment detail page | Pass |
+| Cancel a booked appointment | Pass |
+| Professor login and redirect to dashboard | Pass |
+| Create a new office-hour slot (draft) | Pass |
+| Publish a draft slot (post to students) | Pass |
+| View professor schedule in week/day view | Pass |
+| Update professor profile settings | Pass |
+| Role-based redirect (student trying prof page) | Pass |
