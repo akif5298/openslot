@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost, escapeHtml, fmtDate, fmtRange, initials, setMessage } from "./api.js";
+import { apiGet, apiPatch, escapeHtml, fmtDate, fmtRange, initials, setMessage } from "./api.js";
 import { logout, requireAuth } from "./auth.js";
 
 const session = requireAuth("student");
@@ -102,21 +102,7 @@ function renderSlots(slots) {
         return;
       }
 
-      const notes = window.prompt("Optional note for professor:", "") ?? "";
-      setMessage(noticeNode, "Booking slot...", "info");
-      const result = await apiPost("/appointments", {
-        slot_id: slotId,
-        student_id: session.user.user_id,
-        notes
-      });
-
-      if (!result.ok) {
-        setMessage(noticeNode, result.message || "Booking failed.", "error");
-        return;
-      }
-
-      setMessage(noticeNode, "Booking confirmed. Check My Bookings.", "success");
-      await loadSlots();
+      window.location.href = `confirm-booking.html?slotId=${slotId}`;
     });
   });
 }

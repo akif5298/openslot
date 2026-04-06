@@ -205,6 +205,23 @@ a:hover {
   flex-wrap: wrap;
 }
 
+.hero-centered {
+  text-align: center;
+}
+
+.hero-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+  background: linear-gradient(160deg, #e8f3ff, #f6fbff);
+  color: var(--primary-deep);
+  border: 1px solid #cfe3fb;
+}
+
 .grid {
   display: grid;
   gap: 16px;
@@ -410,6 +427,12 @@ textarea {
   gap: 16px;
 }
 
+.page-narrow {
+  max-width: 840px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .sidebar {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -470,6 +493,36 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.booking-summary {
+  padding: 0;
+  overflow: hidden;
+}
+
+.booking-visual {
+  min-height: 220px;
+  background: linear-gradient(145deg, #1b7fe0, #3c92f1);
+  display: grid;
+  place-items: center;
+}
+
+.booking-visual-icon {
+  width: 92px;
+  height: 92px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 2.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.detail-stack {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
 }
 
 .table-like {

@@ -3,15 +3,22 @@ const SESSION_KEY = "openslot_session";
 
 async function request(method, path, body) {
   try {
+    const session = getSession();
     const response = await fetch(`${API_BASE}${path}`, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {})
+      },
       body: body == null ? undefined : JSON.stringify(body)
     });
 
     const payload = await response.json().catch(() => ({}));
     if (typeof payload.ok !== "boolean") payload.ok = response.ok;
     if (!payload.ok && !payload.message) payload.message = `Request failed (${response.status})`;
+    if (response.status === 401 && path !== "/auth/login") {
+      clearSession();
+    }
     return payload;
   } catch {
     return {

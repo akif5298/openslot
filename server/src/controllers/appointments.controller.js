@@ -1,10 +1,11 @@
 import {
-  DEMO_APPOINTMENTS,
-  DEMO_COURSES,
-  DEMO_SLOTS,
-  DEMO_USERS,
-  nextAppointmentId
-} from "../data/demo.data.js";
+  bookAppointment as persistBooking,
+  cancelAppointment as persistCancellation,
+  getAppointmentById,
+  getSlotById,
+  listAppointmentsByStudent,
+  rescheduleAppointment as persistReschedule
+} from "../db/repository.js";
 
 function parsePositiveInt(value) {
   const parsed = Number(value);
@@ -12,45 +13,50 @@ function parsePositiveInt(value) {
   return Math.trunc(parsed);
 }
 
-function enrichSlot(slot) {
-  const professor = DEMO_USERS.find(user => user.user_id === slot.professor_id);
-  const course = DEMO_COURSES.find(item => item.course_id === slot.course_id);
+function computeAppointmentStatus(appointment, slot) {
+  if (!appointment || !slot) return appointment?.status || "booked";
+  if (appointment.status !== "booked") return appointment.status;
+  const endTime = new Date(slot.end_time).getTime();
+  return Date.now() > endTime ? "completed" : "booked";
+}
 
+function withComputedStatus(appointment, slot) {
   return {
-    ...slot,
-    professor_name: professor?.name ?? "Professor",
-    professor_email: professor?.email ?? "",
-    course_code: course?.course_code ?? "COURSE",
-    course_name: course?.course_name ?? "Course"
+    ...appointment,
+    status: computeAppointmentStatus(appointment, slot)
   };
 }
 
-function computeAppointmentStatus(appointment) {
-  const slot = DEMO_SLOTS.find(item => item.slot_id === appointment.slot_id);
-  if (!slot) return appointment.status;
+function normalizeNotes(value) {
+  return String(value || "").trim();
+}
 
-  if (appointment.status !== "booked") return appointment.status;
-
-  const end = new Date(slot.end_time).getTime();
-  if (Date.now() > end) return "completed";
-  return "booked";
+function ensureStudentAccess(req, studentId) {
+  return req.user.role === "student" && req.user.user_id === studentId;
 }
 
 export function bookAppointment(req, res) {
+  if (req.user.role !== "student") {
+    return res.status(403).json({ ok: false, message: "Only students can book appointments." });
+  }
+
   const slotId = parsePositiveInt(req.body?.slot_id);
   const studentId = parsePositiveInt(req.body?.student_id);
-  const notes = String(req.body?.notes || "").trim();
+  const notes = normalizeNotes(req.body?.notes);
 
   if (!slotId || !studentId) {
     return res.status(400).json({ ok: false, message: "Missing slot_id or student_id" });
   }
 
-  const student = DEMO_USERS.find(user => user.user_id === studentId && user.role === "student");
-  if (!student) {
-    return res.status(404).json({ ok: false, message: "Student not found" });
+  if (!ensureStudentAccess(req, studentId)) {
+    return res.status(403).json({ ok: false, message: "You can only book appointments for yourself." });
   }
 
-  const slot = DEMO_SLOTS.find(item => item.slot_id === slotId);
+  if (notes.length > 600) {
+    return res.status(400).json({ ok: false, message: "Notes must be 600 characters or fewer." });
+  }
+
+  const slot = getSlotById(slotId);
   if (!slot) {
     return res.status(404).json({ ok: false, message: "Slot not found" });
   }
@@ -71,23 +77,17 @@ export function bookAppointment(req, res) {
     return res.status(409).json({ ok: false, message: "Cannot book a slot that has already started." });
   }
 
-  slot.booked_by = studentId;
-
-  const appointment = {
-    appointment_id: nextAppointmentId(),
-    slot_id: slot.slot_id,
-    student_id: studentId,
-    status: "booked",
-    notes,
-    created_at: new Date().toISOString()
-  };
-
-  DEMO_APPOINTMENTS.push(appointment);
+  const appointment = persistBooking({
+    slotId,
+    studentId,
+    notes
+  });
+  const nextSlot = getSlotById(slotId);
 
   return res.status(201).json({
     ok: true,
-    appointment: { ...appointment, status: computeAppointmentStatus(appointment) },
-    slot: enrichSlot(slot),
+    appointment: withComputedStatus(appointment, nextSlot),
+    slot: nextSlot,
     notifications: [
       { to: "student", message: "Booking confirmed." },
       { to: "professor", message: "A student booked one of your slots." }
@@ -96,22 +96,26 @@ export function bookAppointment(req, res) {
 }
 
 export function listMyBookings(req, res) {
+  if (req.user.role !== "student") {
+    return res.status(403).json({ ok: false, message: "Only students can view student bookings." });
+  }
+
   const studentId = parsePositiveInt(req.params.studentId);
   if (!studentId) {
     return res.status(400).json({ ok: false, message: "Invalid student id" });
   }
 
-  const bookings = DEMO_APPOINTMENTS
-    .filter(appointment => appointment.student_id === studentId)
-    .map(appointment => {
-      const slot = DEMO_SLOTS.find(item => item.slot_id === appointment.slot_id);
-      return {
-        ...appointment,
-        status: computeAppointmentStatus(appointment),
-        slot: slot ? enrichSlot(slot) : null
-      };
-    })
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  if (!ensureStudentAccess(req, studentId)) {
+    return res.status(403).json({ ok: false, message: "You can only view your own bookings." });
+  }
+
+  const bookings = listAppointmentsByStudent(studentId).map(appointment => {
+    const slot = getSlotById(appointment.slot_id);
+    return {
+      ...withComputedStatus(appointment, slot),
+      slot
+    };
+  });
 
   return res.json({ ok: true, bookings });
 }
@@ -122,44 +126,54 @@ export function getAppointmentDetails(req, res) {
     return res.status(400).json({ ok: false, message: "Invalid appointment id" });
   }
 
-  const appointment = DEMO_APPOINTMENTS.find(item => item.appointment_id === appointmentId);
+  const appointment = getAppointmentById(appointmentId);
   if (!appointment) {
     return res.status(404).json({ ok: false, message: "Appointment not found" });
   }
 
-  const slot = DEMO_SLOTS.find(item => item.slot_id === appointment.slot_id);
+  const slot = getSlotById(appointment.slot_id);
   if (!slot) {
     return res.status(404).json({ ok: false, message: "Slot not found for this appointment" });
   }
 
-  const student = DEMO_USERS.find(user => user.user_id === appointment.student_id);
+  const isStudentOwner = req.user.role === "student" && req.user.user_id === appointment.student_id;
+  const isProfessorOwner = req.user.role === "professor" && req.user.user_id === slot.professor_id;
+  if (!isStudentOwner && !isProfessorOwner) {
+    return res.status(403).json({ ok: false, message: "You do not have access to this appointment." });
+  }
 
   return res.json({
     ok: true,
-    appointment: { ...appointment, status: computeAppointmentStatus(appointment) },
-    slot: enrichSlot(slot),
-    student: student
-      ? {
-          user_id: student.user_id,
-          name: student.name,
-          email: student.email
-        }
-      : null
+    appointment: withComputedStatus(appointment, slot),
+    slot,
+    student: {
+      user_id: appointment.student_id,
+      name: appointment.student_name,
+      email: appointment.student_email
+    }
   });
 }
 
 export function cancelAppointment(req, res) {
+  if (req.user.role !== "student") {
+    return res.status(403).json({ ok: false, message: "Only students can cancel appointments." });
+  }
+
   const appointmentId = parsePositiveInt(req.params.appointmentId);
   if (!appointmentId) {
     return res.status(400).json({ ok: false, message: "Invalid appointment id" });
   }
 
-  const appointment = DEMO_APPOINTMENTS.find(item => item.appointment_id === appointmentId);
+  const appointment = getAppointmentById(appointmentId);
   if (!appointment) {
     return res.status(404).json({ ok: false, message: "Appointment not found" });
   }
 
-  const slot = DEMO_SLOTS.find(item => item.slot_id === appointment.slot_id);
+  if (!ensureStudentAccess(req, appointment.student_id)) {
+    return res.status(403).json({ ok: false, message: "You can only cancel your own appointments." });
+  }
+
+  const slot = getSlotById(appointment.slot_id);
   if (!slot) {
     return res.status(404).json({ ok: false, message: "Slot not found for this appointment" });
   }
@@ -172,15 +186,16 @@ export function cancelAppointment(req, res) {
     return res.status(409).json({ ok: false, message: "Appointment is not in booked state" });
   }
 
-  appointment.status = "cancelled";
-  if (slot.booked_by === appointment.student_id) {
-    slot.booked_by = null;
-  }
+  const updatedAppointment = persistCancellation({
+    appointmentId,
+    slotId: slot.slot_id
+  });
+  const updatedSlot = getSlotById(slot.slot_id);
 
   return res.json({
     ok: true,
-    appointment: { ...appointment, status: computeAppointmentStatus(appointment) },
-    slot: enrichSlot(slot),
+    appointment: withComputedStatus(updatedAppointment, updatedSlot),
+    slot: updatedSlot,
     notifications: [
       { to: "student", message: "Your appointment was cancelled." },
       { to: "professor", message: "An appointment was cancelled." }
@@ -189,6 +204,10 @@ export function cancelAppointment(req, res) {
 }
 
 export function rescheduleAppointment(req, res) {
+  if (req.user.role !== "student") {
+    return res.status(403).json({ ok: false, message: "Only students can reschedule appointments." });
+  }
+
   const appointmentId = parsePositiveInt(req.params.appointmentId);
   const newSlotId = parsePositiveInt(req.body?.new_slot_id);
 
@@ -196,16 +215,20 @@ export function rescheduleAppointment(req, res) {
     return res.status(400).json({ ok: false, message: "Missing appointment id or new_slot_id" });
   }
 
-  const appointment = DEMO_APPOINTMENTS.find(item => item.appointment_id === appointmentId);
+  const appointment = getAppointmentById(appointmentId);
   if (!appointment) {
     return res.status(404).json({ ok: false, message: "Appointment not found" });
+  }
+
+  if (!ensureStudentAccess(req, appointment.student_id)) {
+    return res.status(403).json({ ok: false, message: "You can only reschedule your own appointments." });
   }
 
   if (appointment.status !== "booked") {
     return res.status(409).json({ ok: false, message: "Only booked appointments can be rescheduled." });
   }
 
-  const oldSlot = DEMO_SLOTS.find(item => item.slot_id === appointment.slot_id);
+  const oldSlot = getSlotById(appointment.slot_id);
   if (!oldSlot) {
     return res.status(404).json({ ok: false, message: "Current slot not found" });
   }
@@ -214,7 +237,7 @@ export function rescheduleAppointment(req, res) {
     return res.status(409).json({ ok: false, message: "Cannot reschedule after the session has started." });
   }
 
-  const newSlot = DEMO_SLOTS.find(item => item.slot_id === newSlotId);
+  const newSlot = getSlotById(newSlotId);
   if (!newSlot) {
     return res.status(404).json({ ok: false, message: "New slot not found" });
   }
@@ -239,18 +262,18 @@ export function rescheduleAppointment(req, res) {
     return res.status(409).json({ ok: false, message: "New slot has already started." });
   }
 
-  if (oldSlot.booked_by === appointment.student_id) {
-    oldSlot.booked_by = null;
-  }
-
-  newSlot.booked_by = appointment.student_id;
-  appointment.slot_id = newSlot.slot_id;
+  const updatedAppointment = persistReschedule({
+    appointmentId,
+    oldSlotId: oldSlot.slot_id,
+    newSlotId: newSlot.slot_id,
+    studentId: appointment.student_id
+  });
 
   return res.json({
     ok: true,
-    appointment: { ...appointment, status: computeAppointmentStatus(appointment) },
-    old_slot: enrichSlot(oldSlot),
-    new_slot: enrichSlot(newSlot),
+    appointment: withComputedStatus(updatedAppointment, getSlotById(newSlot.slot_id)),
+    old_slot: getSlotById(oldSlot.slot_id),
+    new_slot: getSlotById(newSlot.slot_id),
     notifications: [
       { to: "student", message: "Reschedule confirmed." },
       { to: "professor", message: "An appointment was rescheduled." }
