@@ -1,10 +1,13 @@
--- OpenSlot relational schema (Milestone 02)
+-- OpenSlot relational schema (Milestone 03)
 
 CREATE TABLE IF NOT EXISTS users (
   user_id INTEGER PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
+  department VARCHAR(120) NOT NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('student', 'professor')),
+  office_location VARCHAR(160),
+  bio TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -27,7 +30,7 @@ CREATE TABLE IF NOT EXISTS office_hour_slots (
   visibility VARCHAR(20) NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'private')),
   status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'posted', 'cancelled')),
   booked_by INTEGER,
-  notes TEXT,
+  topic VARCHAR(160) NOT NULL DEFAULT 'Office Hours',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (professor_id) REFERENCES users (user_id),

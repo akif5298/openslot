@@ -1,10 +1,13 @@
 # OpenSlot
 
-OpenSlot is a role-based office-hours scheduling system for academic use.
-- Professors create availability slots (draft/post/cancel, public/private).
-- Students browse open slots, book appointments, and manage bookings.
+OpenSlot is a role-based university office-hours scheduling application built for **CP476 Internet Computing (Winter 2026)**.
 
-Course: **CP476 Internet Computing (Winter 2026)**
+The Milestone 3 version now includes:
+- a multi-page student and professor front-end
+- a Node.js + Express backend
+- a persistent SQLite relational database
+- server-side validation and lightweight token-based authorization
+- end-to-end booking, rescheduling, cancellation, slot creation, publishing, and profile update workflows
 
 Team:
 - Benjamin Okojie
@@ -13,63 +16,87 @@ Team:
 
 Quick links:
 - [ER Diagram](ER-DIAGRAM.md)
-- [Database Design Package](docs/milestone-02/database-design.md)
+- [Milestone 02 Database Design](docs/milestone-02/database-design.md)
+- [Milestone 03 Testing Summary](docs/milestone-03/testing-summary-report.md)
+- [Milestone 03 Demo Outline](docs/milestone-03/final-demo-outline.md)
+- [Milestone 03 Presentation One-Pager](docs/milestone-03/presentation-one-pager.md)
+- [Milestone 03 Visual Overview](docs/milestone-03/visual-overview.html)
+- [Milestone 03 Submission Checklist](docs/milestone-03/submission-checklist.md)
 
-## Milestone 02 Deliverables Mapping
+## Milestone 03 Deliverables Mapping
 
 | Required Deliverable | Implemented In Repo |
 |---|---|
-| Working front-end + core screens + primary workflow | `client/*.html`, `client/js/*.js`, `client/css/styles.css` |
-| Database package PDF (diagram + SQL) | `docs/milestone-02/database-design-package.pdf` |
-| Database design source files | `docs/milestone-02/database-design.md`, `docs/milestone-02/database-design-package.txt`, `docs/milestone-02/er-diagram.svg`, `db/schema.sql` |
-| Back-end runnable setup + route/controller structure | `server/src/app.js`, `server/src/routes/*.js`, `server/src/controllers/*.js` |
-| Kanban tracking evidence | `docs/milestone-02/kanban-evidence.md` |
-| Activity blog/wiki updates (2+ entries) | `docs/milestone-02/activity-blog.md` |
-| Rubric self-audit checklist | `docs/milestone-02/rubric-checklist.md` |
-| Updated run instructions + contribution summary | This README |
+| Fully functional full-stack application | `client/`, `server/`, `db/schema.sql` |
+| CRUD-style workflow for core data objects | student booking/cancel/reschedule + professor create/publish/cancel/profile update |
+| Database-backed integration | `server/src/db/database.js`, `server/src/db/repository.js`, `db/schema.sql` |
+| Input validation and security hygiene | protected API routes, request validation, role checks, slot ownership checks |
+| Testing summary report | `docs/milestone-03/testing-summary-report.md` |
+| Deployment/execution instructions | this README |
+| Demo video structure support | `docs/milestone-03/final-demo-outline.md` |
+| Presentation artifact source | `docs/milestone-03/presentation-one-pager.md` |
 
-## Front-End Workflow Implemented
+## Implemented User Workflow
 
 Student flow:
-1. Login (`client/login.html`)
-2. Student home dashboard (`client/student-dashboard.html`)
-3. Browse/filter available slots (`client/browse-slots.html`)
-4. Book slot or reschedule from browse view
-5. View/manage bookings (`client/my-bookings.html`)
-6. View details (`client/appointment-details.html`)
-7. Cancel before start time
+1. Sign in with a demo student account.
+2. Browse posted office-hour slots.
+3. Open the confirmation screen and submit booking notes.
+4. View appointment details.
+5. Reschedule or cancel upcoming bookings.
+6. Review upcoming and past sessions from My Bookings.
 
 Professor flow:
-1. Login (`client/login.html`)
-2. Professor home dashboard (`client/professor-dashboard.html`)
-3. Create slots (`client/slot-create.html`)
-4. Publish/cancel draft slots (`client/professor-schedule.html`)
-5. View day/week schedule (`client/professor-schedule.html`)
-6. Review course cards (`client/professor-courses.html`)
-7. Update profile settings (`client/professor-settings.html`)
+1. Sign in with a demo professor account.
+2. View booked sessions and open slots from the dashboard.
+3. Create new office-hour slots.
+4. Publish or cancel draft slots from the schedule page.
+5. Review active course cards.
+6. Update public profile settings.
 
-## Back-End Setup
+## Tech Stack
 
-API root: `http://localhost:3001/api`
-
-Implemented route groups:
-- `POST /api/auth/login`
-- `GET /api/courses`
-- `GET/POST/PATCH /api/slots...`
-- `POST/GET/PATCH /api/appointments...`
-- `GET /api/schedule/professor/:professorId`
+- Front-end: HTML, CSS, vanilla JavaScript modules
+- Back-end: Node.js, Express
+- Database: SQLite using the built-in Node `node:sqlite` module
 
 ## Run Locally
 
-### 1) Start the server
+### 1. Install server dependencies
+
 ```bash
 cd server
 npm install
+```
+
+### 2. Start the API
+
+```bash
 npm run start
 ```
 
-### 2) Open the front-end
-Open `client/login.html` in your browser.
+API base URL:
+
+```text
+http://localhost:3001/api
+```
+
+Database notes:
+- The app creates `db/openslot.sqlite` automatically on first run.
+- Demo seed data is inserted automatically when the database is empty.
+- To start from a clean database, run with `OPENSLOT_RESET_DB=1`.
+
+### 3. Open the front-end
+
+Open:
+
+```text
+http://localhost:3001
+```
+
+Important:
+- Do not open `client/login.html` using a `file:///...` URL in the browser.
+- Use the server URL above so the browser loads the app over HTTP.
 
 Demo logins:
 - `student@demo.com`
@@ -78,31 +105,50 @@ Demo logins:
 - `prof2@demo.com`
 - `prof3@demo.com`
 
-### 3) Run Milestone 02 verification (optional but recommended)
+### 4. Run the automated smoke test
+
 ```bash
-./scripts/verify-milestone-02.sh
+cd server
+npm run verify
 ```
-This script validates:
-- required Milestone 02 artifacts exist
-- JS syntax across client/server
-- SQL schema execution + constraints in sqlite
-- API smoke flows (auth/courses/slots/booking/reschedule/cancel/schedule)
 
-## Database Design Notes
+This verification script:
+- starts the API against a temporary SQLite database
+- logs in as both student and professor
+- verifies auth protection
+- creates professor slots
+- books, reschedules, and cancels an appointment
+- updates a professor profile
 
-- SQL schema is in `db/schema.sql`.
-- Includes PK/FK constraints, CHECK constraints, UNIQUE constraints, and indexes.
-- Relational model covers users, courses, office-hour slots, and appointments.
+## Database Summary
 
-## Team Contributions (Milestone 02)
+Core tables:
+- `users`
+- `courses`
+- `office_hour_slots`
+- `appointments`
 
-- **Benjamin Okojie**: student-facing workflow UI, schedule rendering support.
-- **Dharmik Patel**: backend route/controller implementation, database schema design, integration testing.
-- **Akif Rahman**: professor dashboard/slot forms, appointment detail UX, documentation support.
+Key relationships:
+- each slot belongs to one professor and one course
+- an appointment links one student to one slot
+- a slot can be unbooked or booked by one student at a time
 
-## Submission Notes
+## Security / Validation Highlights
 
-For Milestone 02 Dropbox submission, include:
-- Repository link/commit
-- `docs/milestone-02/database-design-package.pdf`
-- Any required screenshots of GitHub Projects board/wiki entries if requested by instructor.
+- All non-login API routes require an auth token.
+- Students can only manage their own appointments.
+- Professors can only manage their own slots and schedule.
+- Server-side validation checks dates, IDs, statuses, visibility, and required fields.
+- Slot creation blocks overlapping professor times and past-dated slots.
+
+## Known Limitations
+
+- Authentication is demo-token based and does not include passwords.
+- Notifications and calendar sync are simulated in the UI/API responses only.
+- The client is served as static HTML pages rather than through a bundled framework.
+
+## Milestone 03 Contribution Summary
+
+- **Benjamin Okojie**: student workflow polish, booking/dashboard UI, demo/presentation support.
+- **Dharmik Patel**: persistent backend integration, database setup, API protection, testing workflow.
+- **Akif Rahman**: professor workflow UI, settings/course screens, milestone documentation support.

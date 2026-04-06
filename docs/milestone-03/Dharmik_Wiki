@@ -1,0 +1,52 @@
+# Milestone 3 – Developer Wiki 
+
+## Work Completed
+
+### Design Relational Database Schema
+* Designed the full relational database schema for the application, defining tables, columns, data types, and relationships between core entities such as professors, students, availability slots, and appointments. Currently under code review.
+
+### Create ER Diagram for Database Package
+* Produced an entity-relationship diagram documenting the finalized schema structure, providing the team with a clear visual reference for how data entities relate to one another. Currently under code review.
+
+### Connect Backend Routes to Database Queries
+* Began replacing stub controller responses with real database queries, wiring the existing API routes to the underlying relational database. In progress as schema finalization and SQL statements are confirmed.
+
+### Implement Appointment Update and Cancellation Features
+* Developing the backend logic to support updating and cancelling existing appointments, including the necessary route handlers, controller methods, and database operations. Currently in progress.
+
+### Conduct End-to-End Workflow Testing
+* Performing end-to-end testing across the full application workflow — from student slot selection through professor availability management — to identify integration failures and data flow issues before the final milestone. Currently in progress.
+
+### Prepare Architecture Overview Diagram
+* Drafting a system architecture diagram that illustrates the high-level structure of the application, including the relationship between the front end, backend routes, controllers, and database layer. Currently in progress.
+
+## Decisions Made
+
+### Schema Finalization Before Full Route Wiring
+* The decision was made to complete and review the relational schema (#14) and ER diagram (#15) before fully wiring backend routes to database queries (#26). This avoids having to rewrite queries if the schema changes, reducing rework in the final milestone.
+
+### Appointment Mutation Scope
+* Update and cancellation logic was scoped to operate through the existing route/controller structure established in Milestone 2, keeping the implementation consistent with the backend architecture already in place.
+
+### End-to-End Testing Approach
+* End-to-end testing was conducted manually across the integrated workflow rather than through automated test scripts, given the timeline constraints of the milestone and the number of moving parts still being finalized.
+
+## Blockers and Resolutions
+
+### Blocker: Schema Changes Delayed Route-to-Database Wiring
+* Connecting backend routes to real database queries (#26) was blocked while the relational schema was still being refined, as writing queries against an unstable schema risked significant rework.
+
+**Resolution:**
+* Route wiring was deferred until the schema reached a stable review state (#14), at which point SQL CREATE TABLE statements (#16, done in Milestone 2) and queries could be written with confidence.
+
+### Blocker: End-to-End Testing Revealed Integration Gaps
+* Conducting end-to-end workflow testing (#30) uncovered mismatches between front-end expectations and backend response shapes that were not caught during isolated component development.
+
+**Resolution:**
+* Gaps were logged and triaged by severity. Critical mismatches affecting the core booking workflow are being resolved in coordination with BenOkojie's API integration work (#24), while minor inconsistencies are queued for the final milestone cleanup.
+
+### Blocker: Architecture Diagram Scope Uncertainty
+* It was initially unclear how much detail the architecture overview diagram (#33) should include, particularly around whether infrastructure-level components (hosting, deployment) should be represented.
+
+**Resolution:**
+* The diagram was scoped to the application layer only — front end, API routes, controllers, and database — keeping it consistent with what has been implemented and relevant to the project deliverables.

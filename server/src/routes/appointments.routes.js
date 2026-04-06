@@ -6,9 +6,11 @@ import {
   getAppointmentDetails,
   rescheduleAppointment
 } from "../controllers/appointments.controller.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
+router.use(requireAuth);
 router.post("/", bookAppointment);
 router.get("/mine/:studentId", listMyBookings);
 

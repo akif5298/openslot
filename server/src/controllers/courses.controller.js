@@ -1,5 +1,5 @@
-import { DEMO_COURSES } from "../data/demo.data.js";
+import { listCourses as fetchCourses } from "../db/repository.js";
 
 export function listCourses(req, res) {
-  res.json({ ok: true, courses: DEMO_COURSES });
+  return res.json({ ok: true, courses: fetchCourses() });
 }

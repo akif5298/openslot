@@ -1,15 +1,19 @@
-import { DEMO_SLOTS, DEMO_COURSES } from "../data/demo.data.js";
+import { listSlots } from "../db/repository.js";
 
-function ymd(d) {
-  return d.toISOString().slice(0, 10);
+function ymd(value) {
+  return value.toISOString().slice(0, 10);
 }
 
 export function getProfessorSchedule(req, res) {
   const professorId = Number(req.params.professorId);
-  const view = (req.query.view || "week").toLowerCase(); // day | week
-  const dateStr = req.query.date || ymd(new Date());
+  const view = String(req.query.view || "week").toLowerCase();
+  const dateStr = String(req.query.date || ymd(new Date()));
 
-  const base = new Date(dateStr + "T00:00:00");
+  if (req.user.role !== "professor" || req.user.user_id !== professorId) {
+    return res.status(403).json({ ok: false, message: "You can only view your own schedule." });
+  }
+
+  const base = new Date(`${dateStr}T00:00:00`);
   if (Number.isNaN(base.getTime())) {
     return res.status(400).json({ ok: false, message: "Invalid date (use YYYY-MM-DD)" });
   }
@@ -20,32 +24,24 @@ export function getProfessorSchedule(req, res) {
   if (view === "day") {
     end.setDate(end.getDate() + 1);
   } else {
-    // week starting Monday
-    const day = start.getDay(); // 0 Sun .. 6 Sat
-    const diffToMon = (day === 0 ? -6 : 1 - day);
+    const day = start.getDay();
+    const diffToMon = day === 0 ? -6 : 1 - day;
     start.setDate(start.getDate() + diffToMon);
     end = new Date(start);
     end.setDate(end.getDate() + 7);
   }
 
-  const slots = DEMO_SLOTS
-    .filter(s => s.professor_id === professorId)
-    .filter(s => {
-      const t = new Date(s.start_time).getTime();
-      return t >= start.getTime() && t < end.getTime();
-    })
-    .map(s => {
-      const course = DEMO_COURSES.find(c => c.course_id === s.course_id);
-      return {
-        ...s,
-        course_code: course?.course_code ?? "COURSE",
-        course_name: course?.course_name ?? "Course",
-        booked: s.booked_by != null
-      };
-    })
-    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+  const slots = listSlots({
+    professorId,
+    includeBooked: true,
+    includePrivate: true,
+    status: "all"
+  }).filter(slot => {
+    const time = new Date(slot.start_time).getTime();
+    return time >= start.getTime() && time < end.getTime();
+  });
 
-  res.json({
+  return res.json({
     ok: true,
     view,
     range: { start: start.toISOString(), end: end.toISOString() },
